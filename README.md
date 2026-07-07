@@ -1,14 +1,14 @@
 # Op pad met Serge — Wildeburg 2026
 
 Een klein, persoonlijk festival-appje voor Wildeburg 2026 (10–12 juli, Kraggenburg)
-met de line-up en de notities van Serge & Ariana. Je kunt door alle artiesten
+met de line-up en de notities van Serge. Je kunt door alle artiesten
 bladeren, het blokkenschema per dag bekijken, en je eigen favorieten bewaren in
 een persoonlijk tijdschema.
 
 ## Wat kun je ermee?
 
 - **🎵 Artiesten** — alle artiesten op alfabet, met genre-labels, de notities van
-  Serge & Ariana en een ★ bij hun tips. Zoek op naam, genre of omschrijving, of
+  Serge en een ★ bij zijn tips. Zoek op naam, genre of omschrijving, of
   filter op genre, alleen tips, of alleen je favorieten.
 - **📅 Schema** — het blokkenschema per dag (vrijdag / zaterdag / zondag). Veeg
   het schema naar links en rechts. De nacht loopt gewoon door tot ’s ochtends.

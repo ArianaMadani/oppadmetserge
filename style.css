@@ -128,11 +128,34 @@ body {
   color: var(--sand-300);
   font-size: 11.5px;
   font-weight: 600;
-  transition: color 0.15s;
+  border-radius: 12px;
+  transition: color 0.15s ease, background-color 0.15s ease, transform 0.15s ease;
 }
-.tabbar__icon { font-size: 22px; line-height: 1; }
-.tabbar__btn.is-active { color: var(--coral); }
+.tabbar__icon { display: block; line-height: 0; }
+.tabbar__icon svg { display: block; width: 24px; height: 24px; }
+
+.tabbar__btn.is-active {
+  color: var(--coral);
+  box-shadow: inset 0 2px 0 var(--coral); /* accent-streep bovenaan de actieve tab */
+}
 .tabbar__btn.is-active .tabbar__icon { transform: translateY(-1px); }
+.tabbar__btn.is-active .tab-ico-heart path { fill: currentColor; } /* hart vult zich */
+
+/* Hover alleen voor muis/trackpad, zodat telefoons geen "plakkende" hover
+   houden na een tik. Duidelijk anders dan de actieve tab (pill i.p.v. streep). */
+@media (hover: hover) {
+  .tabbar__btn:hover {
+    color: var(--coral);
+    background-color: rgba(255, 111, 77, 0.14);
+    transform: translateY(-1px);
+  }
+}
+
+/* Nette toetsenbord-focus */
+.tabbar__btn:focus-visible {
+  outline: 2px solid var(--coral);
+  outline-offset: -3px;
+}
 
 /* ---------- Zoek / filter ---------- */
 .searchbar {
@@ -464,10 +487,33 @@ body {
 }
 .sched-cell { position: relative; }
 
-/* Tijd-as (bovenaan, sticky) */
-.time-head {
+/* Dag-band (bovenste kop-rij, sticky) — markeert vr/za/zo op de doorlopende as */
+.day-band {
   position: sticky;
   top: 0;
+  z-index: 22;
+  display: flex;
+  align-items: center;
+  height: 22px;
+  background: var(--green-900);
+  overflow: hidden;
+}
+.day-band.is-boundary { border-left: 2px solid var(--gold); }
+.day-band__txt {
+  position: sticky;
+  left: 120px; /* net voorbij de sticky podium-kolom, zodat het label in beeld blijft */
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: 0.2px;
+  color: var(--sand-100);
+  white-space: nowrap;
+  padding-left: 4px;
+}
+
+/* Tijd-as (tweede kop-rij, sticky onder de dag-band) */
+.time-head {
+  position: sticky;
+  top: 22px;
   z-index: 20;
   background: var(--green-900);
   color: var(--sand-300);
@@ -478,11 +524,29 @@ body {
   border-left: 1px solid rgba(255,255,255,0.06);
   height: 30px;
 }
+.time-head.is-boundary {
+  border-left: 2px solid var(--gold);
+  color: var(--sand-100);
+  font-weight: 800;
+}
 .time-head.corner {
+  top: 0;
   z-index: 30;
   left: 0;
   background: var(--green-900);
   border-left: none;
+}
+
+/* Verticale scheidslijn op dag-grenzen, over de volle hoogte van het grid */
+.day-divider {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  width: 2px;
+  background: var(--gold);
+  opacity: 0.55;
+  z-index: 12;
+  pointer-events: none;
 }
 
 /* Podium-labels (links, sticky) */

@@ -113,12 +113,6 @@
     return e;
   }
 
-  // Grid-grenzen per dag. Vr/za: 12:00 -> 12:00 volgende dag (36). Zo: 12:00 -> 23:00 (23).
-  function gridRange(dayId) {
-    if (dayId === "zo") return { start: 12, end: 23 };
-    return { start: 12, end: 36 };
-  }
-
   // Format een absoluut uur (12..36) terug naar "HH:MM"
   function fmtAbsHour(absH) {
     var h = absH % 24;
@@ -134,9 +128,28 @@
   // ---- Router ----
   window.addEventListener("hashchange", route);
 
+  // Onthoud scrollposities per tab, zodat "terug" vanaf een artiest
+  // niet naar het begin van de lijst of het schema springt.
+  // Het schema is één doorlopend grid: nog maar één horizontale scrollpositie
+  // ({x: grid-scroll, y: verticale paginascroll}). Artiesten: alleen de
+  // verticale paginascroll (getal).
+  var savedScroll = { schema: null, artiesten: 0 };
+  function pageY() {
+    return window.scrollY || window.pageYOffset || document.documentElement.scrollTop || 0;
+  }
+  function rememberScroll() {
+    if (currentView === "schema") {
+      var sc = document.querySelector(".schedule-scroll");
+      savedScroll.schema = { x: sc ? sc.scrollLeft : 0, y: pageY() };
+    } else if (currentView === "artiesten") {
+      savedScroll.artiesten = pageY();
+    }
+  }
+
   function route() {
     var hash = location.hash.replace(/^#/, "");
     var parts = hash.split("/");
+    rememberScroll();
 
     if (parts[0] === "artiest" && parts[1]) {
       renderDetail(parts[1]);
@@ -144,8 +157,33 @@
       return;
     }
     if (parts[0] === "schema") {
-      renderSchedule(parts[1] || currentDay);
+      renderSchedule();
       setActiveTab("schema");
+      // Deep-link #schema/za => spring naar die dag; anders herstel scrollpositie.
+      var dayParam = (parts[1] && DAY_ORDER.indexOf(parts[1]) !== -1) ? parts[1] : null;
+      var applySchemaScroll = function () {
+        var sc = document.querySelector(".schedule-scroll");
+        if (!sc) return;
+        void sc.scrollWidth; // forceer layout zodat scrollLeft niet naar 0 klemt
+        if (dayParam) {
+          sc.scrollLeft = dayScrollLeft(dayParam);
+          window.scrollTo(0, 0);
+        } else if (savedScroll.schema) {
+          sc.scrollLeft = savedScroll.schema.x || 0;
+          window.scrollTo(0, savedScroll.schema.y || 0);
+        } else {
+          window.scrollTo(0, 0);
+        }
+        updateDaySpy();
+      };
+      // Het brede grid is soms pas na een layout-tick echt scrollbaar (scrollLeft
+      // zou anders naar 0 klemmen). rAF dekt het vloeiende geval; de timer is een
+      // betrouwbaar vangnet (ook als rAF gethrottled is).
+      requestAnimationFrame(function () {
+        applySchemaScroll();
+        requestAnimationFrame(applySchemaScroll);
+      });
+      setTimeout(applySchemaScroll, 80);
       return;
     }
     if (parts[0] === "mijn") {
@@ -156,6 +194,9 @@
     // default
     renderArtists();
     setActiveTab("artiesten");
+    var savedY = savedScroll.artiesten || 0;
+    // Herstel na de render zodat de (langere) lijst er al staat.
+    requestAnimationFrame(function () { window.scrollTo(0, savedY); });
   }
 
   function setActiveTab(tab) {
@@ -307,7 +348,7 @@
           'aria-label="Favoriet aan/uit">' + heart + '</button>' +
         '<div class="artist-card__name">' +
           escapeHtml(a.name) +
-          (a.tip ? '<span class="tip-badge" title="Tip van Serge & Ariana">★</span>' : '') +
+          (a.tip ? '<span class="tip-badge" title="Tip van Serge">★</span>' : '') +
         '</div>' +
         (genresHtml ? '<div class="artist-card__genres">' + genresHtml + '</div>' : '') +
         '<div class="artist-card__slots">' + slotSummary(a) + '</div>' +
@@ -436,7 +477,7 @@
     var html =
       '<button class="back-btn" data-back="1">← Terug</button>' +
       '<div class="detail" style="--stage-color:' + color + '">' +
-        (a.tip ? '<div class="detail__tip">★ Tip van Serge &amp; Ariana</div>' : '') +
+        (a.tip ? '<div class="detail__tip">★ Tip van Serge</div>' : '') +
         '<h1 class="detail__name">' + escapeHtml(a.name) + '</h1>' +
         (genresHtml ? '<div class="chips">' + genresHtml + '</div>' : '') +
         descHtml +
@@ -473,92 +514,116 @@
   }
 
   // ======================================================================
-  //  TAB 3: BLOKKENSCHEMA
+  //  TAB 3: DOORLOPEND BLOKKENSCHEMA (één continue tijdlijn)
   // ======================================================================
-  var currentDay = "vr";
-  var HOUR_WIDTH = 108; // px per uur (horizontaal scrollbaar)
-  var STAGE_LABEL_WIDTH = 116;
+  // De hele festival-tijdlijn staat op één horizontaal scrollend grid:
+  // vrijdag 12:00 → zaterdag 12:00 → zondag 12:00 → zondag 23:00 (59 uur),
+  // zodat de nacht gewoon doorloopt. Globale uur-offset t.o.v. vrijdag 12:00:
+  //   dayIndex(vr=0,za=1,zo=2) * 24 + (absHour − 12)
+  var currentDay = "vr";            // welke dag-knop actief oogt (scroll-spy stuurt dit)
+  var HOUR_WIDTH = 92;              // px per uur (iets smaller dan vroeger => prettiger op mobiel)
+  var STAGE_LABEL_WIDTH = 112;
+  var FEST_START = 12;             // vrijdag 12:00 = globaal uur 0
+  var FEST_TOTAL_HOURS = 59;       // t/m zondag 23:00
 
-  // Verzamel alle getimede slots per dag + podium; en de "geen tijd"-slots.
-  function slotsForDay(dayId) {
-    var timed = [];   // {artist, slot, absStart, absEnd}
-    var untimed = {}; // stage -> [ {artist, slot} ]
+  function dayIndex(dayId) {
+    var i = DAY_ORDER.indexOf(dayId);
+    return i === -1 ? 0 : i;
+  }
+  // Globaal uur (0..59) op de doorlopende as voor een absoluut uur binnen een dag.
+  function globalHour(dayId, absH) {
+    return dayIndex(dayId) * 24 + (absH - FEST_START);
+  }
+  // Globaal uur waarop 12:00 van een dag begint (vr=0, za=24, zo=48).
+  function dayGlobalStart(dayId) { return dayIndex(dayId) * 24; }
+  // scrollLeft die 12:00 van een dag netjes links naast de podium-kolom zet.
+  function dayScrollLeft(dayId) { return dayGlobalStart(dayId) * HOUR_WIDTH; }
+
+  // Verzamel alle getimede slots (globaal geplaatst) en de "geen tijd"-slots per dag.
+  function slotsForFestival() {
+    var timed = [];        // {artist, slot, gStart, gEnd, stage}
+    var untimedByDay = {}; // dayId -> stage -> [ {artist, slot} ]
     DATA.artists.forEach(function (a) {
       (a.slots || []).forEach(function (s) {
-        if (s.day !== dayId) return;
         if (s.start == null || s.end == null) {
-          if (!untimed[s.stage]) untimed[s.stage] = [];
-          untimed[s.stage].push({ artist: a, slot: s });
+          if (!untimedByDay[s.day]) untimedByDay[s.day] = {};
+          if (!untimedByDay[s.day][s.stage]) untimedByDay[s.day][s.stage] = [];
+          untimedByDay[s.day][s.stage].push({ artist: a, slot: s });
         } else {
           timed.push({
-            artist: a, slot: s,
-            absStart: absHour(s.start),
-            absEnd: absEndHour(s.start, s.end)
+            artist: a, slot: s, stage: s.stage,
+            gStart: globalHour(s.day, absHour(s.start)),
+            gEnd: globalHour(s.day, absEndHour(s.start, s.end))
           });
         }
       });
     });
-    return { timed: timed, untimed: untimed };
+    return { timed: timed, untimedByDay: untimedByDay };
   }
 
-  function renderSchedule(dayId) {
+  function renderSchedule() {
     currentView = "schema";
-    if (DAY_ORDER.indexOf(dayId) === -1) dayId = "vr";
-    currentDay = dayId;
 
-    var data = slotsForDay(dayId);
-    var range = gridRange(dayId);
-    var totalHours = range.end - range.start;
+    var data = slotsForFestival();
+    var totalHours = FEST_TOTAL_HOURS;
     var gridWidth = STAGE_LABEL_WIDTH + totalHours * HOUR_WIDTH;
 
-    // Dag-switcher
+    // Dag-knoppen = jump-knoppen (geen re-render meer)
     var html = '<div class="day-switcher">';
     DATA.days.forEach(function (d) {
-      html += '<button data-day="' + d.id + '" class="' +
-        (d.id === dayId ? "is-active" : "") + '">' +
+      html += '<button data-day="' + d.id + '">' +
         escapeHtml(d.label) + '<small>' + escapeHtml(d.datum) + '</small></button>';
     });
     html += '</div>';
 
-    // Podia met minstens één (getimed of ongetimed) slot voor deze dag,
-    // maar we tonen alle podia uit data.stages in vaste volgorde als ze slots hebben.
+    // Podia met minstens één getimed blok (vaste volgorde uit data.stages)
     var stagesWithContent = DATA.stages.filter(function (st) {
-      var hasTimed = data.timed.some(function (t) { return t.slot.stage === st; });
-      return hasTimed; // rij in het tijd-grid alleen als er getimede blokken zijn
+      return data.timed.some(function (t) { return t.stage === st; });
     });
 
-    // ---- Tijd-grid ----
+    // ---- Doorlopend tijd-grid ----
     html += '<div class="schedule-scroll"><div class="schedule-grid" style="' +
       'grid-template-columns:' + STAGE_LABEL_WIDTH + 'px repeat(' + totalHours +
       ', ' + HOUR_WIDTH + 'px);' +
-      'grid-template-rows:30px repeat(' + stagesWithContent.length + ', 58px);' +
+      'grid-template-rows:22px 30px repeat(' + stagesWithContent.length + ', 58px);' +
       'width:' + gridWidth + 'px;">';
 
-    // Rij 1: hoek + tijd-as
-    html += '<div class="time-head corner">Podium</div>';
-    for (var h = range.start; h < range.end; h++) {
-      html += '<div class="time-head" style="grid-column:span 1;">' +
-        pad2(h % 24) + ':00</div>';
+    // Rij 1: hoek (spant 2 kop-rijen) + dag-banden
+    html += '<div class="time-head corner" style="grid-row:1 / span 2;">Podium</div>';
+    DATA.days.forEach(function (d) {
+      var startH = dayGlobalStart(d.id);
+      var nextIdx = dayIndex(d.id) + 1;
+      var endH = Math.min(nextIdx * 24, totalHours);
+      var span = endH - startH;
+      if (span <= 0) return;
+      html += '<div class="day-band' + (dayIndex(d.id) > 0 ? " is-boundary" : "") +
+        '" style="grid-row:1;grid-column:' + (2 + startH) + ' / span ' + span + ';">' +
+        '<span class="day-band__txt">' + escapeHtml(d.label + ' · ' + d.datum) + '</span></div>';
+    });
+
+    // Rij 2: tijd-as (uur-labels), continu 12:00 → 23:00 dag erna
+    for (var h = 0; h < totalHours; h++) {
+      var clock = (FEST_START + h) % 24;
+      var boundary = (h % 24 === 0 && h > 0) ? " is-boundary" : "";
+      html += '<div class="time-head' + boundary + '" style="grid-row:2;grid-column:' +
+        (2 + h) + ';">' + pad2(clock) + ':00</div>';
     }
 
     // Podium-rijen
     stagesWithContent.forEach(function (st, rowIdx) {
-      var rowLine = rowIdx + 2; // grid rows zijn 1-based; rij 1 = tijd-as
-      // Sticky label
+      var rowLine = rowIdx + 3; // rij 1 = dag-band, rij 2 = tijd-as
       html += '<div class="stage-label" style="grid-row:' + rowLine + ';grid-column:1;' +
         '--stage-color:' + stageColor(st) + '">' +
         '<span class="stage-label__swatch"></span>' + escapeHtml(st) + '</div>';
 
-      // Achtergrond-cel over alle uren
       html += '<div class="stage-row-bg" style="grid-row:' + rowLine +
         ';grid-column:2 / span ' + totalHours + ';position:relative;">';
 
-      // Blokken voor dit podium
-      data.timed.filter(function (t) { return t.slot.stage === st; })
+      data.timed.filter(function (t) { return t.stage === st; })
         .forEach(function (t) {
-          var left = (t.absStart - range.start) * HOUR_WIDTH;
-          var clampedEnd = Math.min(t.absEnd, range.end);
-          var width = (clampedEnd - t.absStart) * HOUR_WIDTH;
+          var left = t.gStart * HOUR_WIDTH;
+          var clampedEnd = Math.min(t.gEnd, totalHours);
+          var width = (clampedEnd - t.gStart) * HOUR_WIDTH;
           if (width < 26) width = 26;
           var fav = isFav(t.artist.id);
           html += '<button class="sched-block' +
@@ -575,22 +640,34 @@
       html += '</div>'; // stage-row-bg
     });
 
+    // Verticale scheidslijnen op dag-grenzen (za 12:00, zo 12:00) over de hele hoogte
+    DATA.days.forEach(function (d) {
+      if (dayIndex(d.id) === 0) return;
+      var x = STAGE_LABEL_WIDTH + dayGlobalStart(d.id) * HOUR_WIDTH;
+      html += '<div class="day-divider" style="left:' + x + 'px;"></div>';
+    });
+
     html += '</div></div>'; // schedule-grid + scroll
 
-    html += '<p class="schedule-hint">Sleep het schema naar links/rechts. ' +
-      'Nacht loopt door tot ’s ochtends. Tik op een blok voor info. ' +
-      '❤️ = jouw favoriet.</p>';
+    html += '<p class="schedule-hint">Sleep het schema naar links/rechts — het loopt ' +
+      'door van vrijdag t/m zondagavond, de nacht incluis. Tik op een dag om erheen ' +
+      'te springen, of op een blok voor info. ❤️ = jouw favoriet.</p>';
 
-    // ---- "Verder deze dag" (slots zonder tijd) ----
-    var untimedStages = DATA.stages.filter(function (st) { return data.untimed[st]; });
-    if (untimedStages.length) {
+    // ---- "Verder deze dag" (slots zonder tijd), gegroepeerd per dag ----
+    DAY_ORDER.forEach(function (dayId) {
+      var byStage = data.untimedByDay[dayId];
+      if (!byStage) return;
+      var stages = DATA.stages.filter(function (st) { return byStage[st]; });
+      if (!stages.length) return;
+      var day = dayById[dayId];
       html += '<div class="no-time-section">' +
-        '<div class="section-title">Verder deze dag (tijd nog onbekend)</div>';
-      untimedStages.forEach(function (st) {
+        '<div class="section-title">Verder op ' +
+        escapeHtml(day ? day.label.toLowerCase() : dayId) + ' (tijd nog onbekend)</div>';
+      stages.forEach(function (st) {
         html += '<div class="no-time-stage" style="--stage-color:' + stageColor(st) + '">' +
           '<div class="no-time-stage__head"><span class="swatch"></span>' +
           escapeHtml(st) + '</div><div class="no-time-chips">';
-        data.untimed[st].forEach(function (item) {
+        byStage[st].forEach(function (item) {
           var fav = isFav(item.artist.id);
           html += '<button class="no-time-chip' + (fav ? " is-fav" : "") + '" ' +
             'data-artist="' + escapeHtml(item.artist.id) + '">' +
@@ -600,16 +677,22 @@
         html += '</div></div>';
       });
       html += '</div>';
-    }
+    });
 
     el("view").innerHTML = html;
 
-    // Events
+    // Dag-knoppen: smooth-scroll (jump) naar 12:00 van die dag, geen re-render.
     document.querySelectorAll("[data-day]").forEach(function (b) {
       b.addEventListener("click", function () {
-        location.hash = "schema/" + b.getAttribute("data-day");
+        var dayId = b.getAttribute("data-day");
+        var sc = document.querySelector(".schedule-scroll");
+        setActiveDayBtn(dayId);
+        smoothScrollLeft(sc, dayScrollLeft(dayId), 450);
+        // Houd de URL netjes zonder een re-render/hashchange te forceren.
+        if (history.replaceState) history.replaceState(null, "", "#schema/" + dayId);
       });
     });
+
     document.querySelectorAll(".sched-block[data-artist], .no-time-chip[data-artist]")
       .forEach(function (b) {
         b.addEventListener("click", function () {
@@ -617,7 +700,76 @@
         });
       });
 
-    scrollTop();
+    // Scroll-spy: actieve dag-knop volgt de horizontale scrollpositie.
+    var sc = document.querySelector(".schedule-scroll");
+    if (sc) sc.addEventListener("scroll", onScheduleScroll, { passive: true });
+  }
+
+  // ---- Vloeiende jump-scroll (eigen rAF-animatie, werkt overal) ----
+  var programmaticScroll = false;
+  var jumpTimer = null;
+  var jumpToken = 0; // invalideert een lopende animatie zodra er een nieuwe start
+  function smoothScrollLeft(el, target, duration) {
+    if (!el) return;
+    clearTimeout(jumpTimer);
+    jumpToken++;
+    var myToken = jumpToken;
+    var start = el.scrollLeft;
+    var dist = target - start;
+    duration = duration || 450;
+    programmaticScroll = true; // onderdruk de spy tijdens de animatie
+    var done = false;
+    function finish() {
+      if (done || myToken !== jumpToken) return; // al klaar of vervangen
+      done = true;
+      el.scrollLeft = target;
+      programmaticScroll = false;
+      updateDaySpy();
+    }
+    if (Math.abs(dist) < 1) { finish(); return; }
+    var t0 = null;
+    function ease(p) { return p < 0.5 ? 2 * p * p : -1 + (4 - 2 * p) * p; } // easeInOutQuad
+    function step(ts) {
+      if (done || myToken !== jumpToken) return; // afgebroken
+      if (t0 === null) t0 = ts;
+      var p = Math.min((ts - t0) / duration, 1);
+      el.scrollLeft = Math.round(start + dist * ease(p));
+      if (p < 1) requestAnimationFrame(step);
+      else finish();
+    }
+    requestAnimationFrame(step);
+    // Vangnet: mocht rAF gethrottled/gepauzeerd zijn (verborgen tab e.d.), dan
+    // landt deze timeout ons alsnog netjes op de juiste plek (whoever-first-wins).
+    jumpTimer = setTimeout(finish, duration + 400);
+  }
+
+  // ---- Scroll-spy voor het doorlopende schema ----
+  var spyTicking = false;
+  function onScheduleScroll() {
+    if (programmaticScroll) return; // geen spy tijdens een jump (voorkomt geflikker)
+    if (spyTicking) return;
+    spyTicking = true;
+    requestAnimationFrame(function () {
+      spyTicking = false;
+      updateDaySpy();
+    });
+  }
+  // Bepaal welke dag het (net na de linkerrand) van de viewport raakt en markeer die.
+  function updateDaySpy() {
+    var sc = document.querySelector(".schedule-scroll");
+    if (!sc) return;
+    // Probe iets voorbij de sticky podium-kolom, zodat de "actieve" dag die is
+    // waarvan de blokken links in beeld staan.
+    var probeX = sc.scrollLeft + STAGE_LABEL_WIDTH + HOUR_WIDTH * 0.5;
+    var gHour = (probeX - STAGE_LABEL_WIDTH) / HOUR_WIDTH; // 0..59
+    var dayId = gHour < 24 ? "vr" : (gHour < 48 ? "za" : "zo");
+    setActiveDayBtn(dayId);
+  }
+  function setActiveDayBtn(dayId) {
+    currentDay = dayId;
+    document.querySelectorAll("[data-day]").forEach(function (b) {
+      b.classList.toggle("is-active", b.getAttribute("data-day") === dayId);
+    });
   }
 
   // ======================================================================
