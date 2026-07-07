@@ -31,6 +31,44 @@
     return STAGE_COLORS[stage] || "#326049";
   }
 
+  // ---- Kaart: podium-slugs (voor deep-links #kaart/<slug>) ----
+  var STAGE_SLUG = {
+    "Wildlive":       "wildlive",
+    "Strand":         "strand",
+    "Helling":        "helling",
+    "BUD X Lodge":    "bud-x-lodge",
+    "Bamboebos":      "bamboebos",
+    "Duinpan":        "duinpan",
+    "Studio De Baan": "studio-de-baan",
+    "Achtertuin":     "achtertuin",
+    "Kas":            "kas"
+  };
+  var SLUG_STAGE = {};
+  Object.keys(STAGE_SLUG).forEach(function (s) { SLUG_STAGE[STAGE_SLUG[s]] = s; });
+  function stageSlug(stage) { return STAGE_SLUG[stage] || ""; }
+
+  // ---- Kaart: marker-posities (percentages t.o.v. de afbeelding) ----
+  // Podium-markers (klikbaar, met programma).
+  var STAGE_MARKERS = [
+    { stage: "Wildlive",       x: 18.7, y: 21.6 },
+    { stage: "Strand",         x: 25.2, y: 30.4 },
+    { stage: "Studio De Baan", x: 19.3, y: 38.3 },
+    { stage: "Kas",            x: 52.7, y: 41.9 },
+    { stage: "Bamboebos",      x: 45.7, y: 48.4 },
+    { stage: "BUD X Lodge",    x: 57.4, y: 48.7 },
+    { stage: "Helling",        x: 21.0, y: 56.2 },
+    { stage: "Duinpan",        x: 45.9, y: 58.4 },
+    { stage: "Achtertuin",     x: 19.7, y: 76.7 }
+  ];
+  // Neutrale info-markers (geen programma).
+  var INFO_MARKERS = [
+    { name: "Entree",                     x: 79.7, y: 6.4 },
+    { name: "EHBO",                       x: 19.1, y: 13.1 },
+    { name: "Dorpshart (campingwinkel)",  x: 35.8, y: 18.6 },
+    { name: "Eiland",                     x: 63.0, y: 65.3 },
+    { name: "Vuurtorenstrand",            x: 67.5, y: 81.9 }
+  ];
+
   // ---- Kleine helpers ----
   function el(id) { return document.getElementById(id); }
 
@@ -53,7 +91,13 @@
   }
 
   // ---- App-state ----
-  var currentView = "artiesten"; // welke tab/scherm actief is (voor gerichte re-renders)
+  var currentView = "home"; // welke tab/scherm actief is (voor gerichte re-renders)
+
+  // ---- Festival-klok (voor de HOME "Nu op Wildeburg"-widget) ----
+  // Maand-index in JS: juli = 6. Festival: vr 10 juli 12:00 t/m zo 12 juli 23:00.
+  var FEST_START_TS = new Date(2026, 6, 10, 12, 0, 0, 0); // globaal uur 0 op de tijdlijn
+  var FEST_END_TS   = new Date(2026, 6, 12, 23, 0, 0, 0);
+  var FEST_DAY_MID  = new Date(2026, 6, 10, 0, 0, 0, 0);  // middernacht vóór vrijdag (voor countdown)
 
   // ---- Favorieten (localStorage) ----
   var favs = loadFavs();
@@ -150,7 +194,13 @@
     var hash = location.hash.replace(/^#/, "");
     var parts = hash.split("/");
     rememberScroll();
+    clearHomeTimer(); // stop de minuut-tik zodra we (mogelijk) home verlaten
 
+    if (hash === "" || parts[0] === "home") {
+      renderHome();
+      setActiveTab("home");
+      return;
+    }
     if (parts[0] === "artiest" && parts[1]) {
       renderDetail(parts[1]);
       setActiveTab(null);
@@ -184,6 +234,12 @@
         requestAnimationFrame(applySchemaScroll);
       });
       setTimeout(applySchemaScroll, 80);
+      return;
+    }
+    if (parts[0] === "kaart") {
+      var focusSlug = (parts[1] && SLUG_STAGE[parts[1]]) ? parts[1] : null;
+      renderMap(focusSlug);
+      setActiveTab("kaart");
       return;
     }
     if (parts[0] === "mijn") {
@@ -466,7 +522,8 @@
           '<div class="slot-line__day">' + dagKop + '</div>' +
           '<div class="slot-line__body">' +
             '<span class="slot-line__time">' + escapeHtml(tijd) + '</span>' + extras +
-            '<br><span class="slot-line__stage">📍 ' + escapeHtml(s.stage) + '</span>' +
+            '<br><a class="slot-line__stage slot-line__stage--link" ' +
+              'href="#kaart/' + stageSlug(s.stage) + '">📍 ' + escapeHtml(s.stage) + '</a>' +
           '</div>' +
         '</div>';
       }).join("") + '</div>';
@@ -894,11 +951,383 @@
     scrollTop();
   }
 
-  // ---- Start ----
-  if (!location.hash) {
-    // Zet default-hash zonder history-entry; triggert hashchange -> route().
-    location.replace("#artiesten");
+  // ======================================================================
+  //  TAB 0: HOME (welkom + "Nu op Wildeburg" + stats + Over Serge)
+  // ======================================================================
+  var TIP_COUNT = DATA.artists.filter(function (a) { return a.tip; }).length;
+
+  // Minuut-tik die de "Nu op Wildeburg"-widget bijwerkt zolang home in beeld is.
+  var homeTimer = null;
+  function clearHomeTimer() {
+    if (homeTimer) { clearInterval(homeTimer); homeTimer = null; }
   }
-  // Render meteen de huidige (of zojuist gezette) hash.
+
+  // Getimede slots per podium (gesorteerd op globale starttijd), gememoïseerd.
+  var _timedByStage = null;
+  function timedByStage() {
+    if (_timedByStage) return _timedByStage;
+    _timedByStage = {};
+    slotsForFestival().timed.forEach(function (t) {
+      (_timedByStage[t.stage] = _timedByStage[t.stage] || []).push(t);
+    });
+    Object.keys(_timedByStage).forEach(function (k) {
+      _timedByStage[k].sort(function (a, b) { return a.gStart - b.gStart; });
+    });
+    return _timedByStage;
+  }
+  // Wat speelt er NU / STRAKS op een podium, gegeven het globale uur (0..59)?
+  // Wordt gedeeld door de home-widget én de kaart-popups.
+  function stageNowNext(stage, globalNow) {
+    var list = timedByStage()[stage] || [];
+    var current = null, next = null;
+    list.forEach(function (t) {
+      if (t.gStart <= globalNow && globalNow < t.gEnd) current = t;
+    });
+    list.forEach(function (t) {
+      if (t.gStart > globalNow && (!next || t.gStart < next.gStart)) next = t;
+    });
+    return { current: current, next: next, first: list[0] || null };
+  }
+
+  // Bouwt de inhoud van het "Nu op Wildeburg"-blok op basis van de apparaatklok.
+  function buildNowHtml() {
+    var now = new Date();
+
+    // ---- VÓÓR het festival: countdown ----
+    if (now < FEST_START_TS) {
+      var todayMid = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+      var dayDiff = Math.round((FEST_DAY_MID - todayMid) / 86400000);
+      var msg;
+      if (dayDiff >= 2) {
+        msg = "Nog " + dayDiff + " nachtjes slapen 🌲";
+      } else if (dayDiff === 1) {
+        msg = "Morgen begint het!! 🌲";
+      } else {
+        // Vrijdag 10 juli, vóór 12:00
+        var uren = Math.max(1, Math.ceil((FEST_START_TS - now) / 3600000));
+        msg = "Vandaag!! Nog " + uren + " uur… 🌲";
+      }
+      return '<div class="home-now__count">' + escapeHtml(msg) + '</div>' +
+             '<div class="home-now__sub">Wildeburg 2026 · 10–12 juli · Kraggenburg</div>';
+    }
+
+    // ---- NA het festival ----
+    if (now > FEST_END_TS) {
+      return '<div class="home-now__count">Dat was Wildeburg 2026 — tot volgend jaar! 🌲</div>';
+    }
+
+    // ---- TIJDENS het festival: per podium de act die NU speelt ----
+    var globalNow = (now - FEST_START_TS) / 3600000; // 0..59 op de doorlopende tijdlijn
+    var rows = "";
+
+    DATA.stages.forEach(function (st) {
+      var nn = stageNowNext(st, globalNow);
+      var current = nn.current, next = nn.next;
+      if (!current) return; // podia zonder actueel programma weglaten
+
+      var a = current.artist;
+      var marks = "";
+      if (a.tip) marks += '<span class="home-now__star" title="Tip van Serge">★</span>';
+      if (isFav(a.id)) marks += '<span class="home-now__heart" title="Favoriet">❤️</span>';
+
+      rows += '<a class="home-now__act" href="#artiest/' + escapeHtml(a.id) + '" ' +
+        'style="--stage-color:' + stageColor(st) + '">' +
+        '<span class="home-now__dot"></span>' +
+        '<span class="home-now__info">' +
+          '<span class="home-now__stage">' + escapeHtml(st) + '</span>' +
+          '<span class="home-now__name">' + escapeHtml(a.name) + marks + '</span>' +
+          '<span class="home-now__till">nog tot ' + escapeHtml(current.slot.end) + '</span>' +
+          (next
+            ? '<span class="home-now__next">straks: ' + escapeHtml(next.artist.name) +
+              ' (' + escapeHtml(next.slot.start) + ')</span>'
+            : '') +
+        '</span>' +
+      '</a>';
+    });
+
+    if (!rows) {
+      return '<div class="home-now__sub">Even geen live programma — kijk zo weer! 🌲</div>';
+    }
+    return '<div class="home-now__list">' + rows + '</div>';
+  }
+
+  function renderHome() {
+    currentView = "home";
+
+    var favCount = favs.length;
+
+    var sergeText =
+      '<p>Serge is de synth-nerd van de vriendengroep: het type dat op een festival ' +
+      'niet naar de dj kijkt, maar naar de kabels erachter. Nieuwsgierig naar alles ' +
+      'wat piept, bromt of knettert — hoe obscuurder, hoe beter.</p>' +
+      '<p>Voor Wildeburg 2026 heeft hij alle 163 acts beluisterd. Ja, állemaal. Ook de ' +
+      'autotune (daar moet hij nog even van bijkomen). Bij elke act schreef hij zijn ' +
+      'ongezouten mening: soms lovend, soms genadeloos, altijd eerlijk.</p>' +
+      '<p>Wat begon als een grapje in een notitie, groeide uit tot een heuse gids mét ' +
+      'webapp, waarin je ook je eigen favvies kunt bewaren. De ★ sterretjes markeren ' +
+      'Serges ultieme favorieten — grote kans dat je hem daar links vooraan in het wild spot.</p>';
+
+    var html =
+      '<section class="home">' +
+        '<div class="home-hero">' +
+          '<h2 class="home-hero__title">Welkom! 🌲</h2>' +
+          '<p class="home-hero__intro">Alle artiesten van Wildeburg 2026, het complete ' +
+          'blokkenschema en de ongezouten mening van Serge bij (bijna) elke act.</p>' +
+        '</div>' +
+
+        '<div class="home-block">' +
+          '<div class="section-title">Nu op Wildeburg</div>' +
+          '<div id="homeNow" class="home-now">' + buildNowHtml() + '</div>' +
+        '</div>' +
+
+        '<div class="home-stats">' +
+          '<a class="home-stat" href="#artiesten">' +
+            '<span class="home-stat__num">' + DATA.artists.length + '</span>' +
+            '<span class="home-stat__label">acts</span></a>' +
+          '<button class="home-stat" type="button" data-hometips="1">' +
+            '<span class="home-stat__num">★ ' + TIP_COUNT + '</span>' +
+            '<span class="home-stat__label">tips van Serge</span></button>' +
+          '<a class="home-stat" href="#mijn">' +
+            '<span class="home-stat__num">' + favCount + '</span>' +
+            '<span class="home-stat__label">jouw favorieten</span></a>' +
+        '</div>' +
+
+        '<div class="home-serge" id="overSerge">' +
+          '<div class="section-title">Over Serge</div>' +
+          '<figure class="home-serge__figure" id="sergeFigure">' +
+            '<img class="home-serge__img" src="./serge.jpg" alt="Serge achter de knopjes">' +
+            '<figcaption class="home-serge__caption">Serge in het wild, in z\'n ' +
+            'natuurlijke habitat (achter de knopjes).</figcaption>' +
+          '</figure>' +
+          '<div class="home-serge__text">' + sergeText + '</div>' +
+        '</div>' +
+      '</section>';
+
+    el("view").innerHTML = html;
+
+    // Tips-tegel: zet het "★ Alleen tips"-filter aan en ga naar de artiestenlijst.
+    var tipsBtn = document.querySelector("[data-hometips]");
+    if (tipsBtn) tipsBtn.addEventListener("click", function () {
+      searchState.tipOnly = true;
+      location.hash = "artiesten";
+    });
+
+    // Foto-blok netjes verbergen als serge.jpg (nog) niet bestaat.
+    var sergeImg = document.querySelector("#sergeFigure .home-serge__img");
+    var sergeFig = el("sergeFigure");
+    if (sergeImg && sergeFig) {
+      sergeImg.addEventListener("error", function () { sergeFig.style.display = "none"; });
+      // Als de load al mislukt was vóór onze listener: complete + geen afmetingen.
+      if (sergeImg.complete && sergeImg.naturalWidth === 0) {
+        sergeFig.style.display = "none";
+      }
+    }
+
+    // Elke minuut de "Nu"-widget herberekenen zolang home zichtbaar is.
+    clearHomeTimer();
+    homeTimer = setInterval(function () {
+      var n = el("homeNow");
+      if (!n) { clearHomeTimer(); return; } // van view gewisseld
+      n.innerHTML = buildNowHtml();
+    }, 60000);
+
+    scrollTop(); // home heeft geen scroll-geheugen
+  }
+
+  // ======================================================================
+  //  TAB 5: KAART (plattegrond met podium-markers)
+  // ======================================================================
+  var mapPopupEl = null;
+
+  function closeMapPopup() {
+    if (mapPopupEl) { mapPopupEl.parentNode && mapPopupEl.parentNode.removeChild(mapPopupEl); mapPopupEl = null; }
+    var bd = el("mapPopBackdrop");
+    if (bd) bd.hidden = true;
+  }
+
+  // Popup-inhoud voor een podium-marker (deelt de nu/straks-logica met home).
+  function buildStagePopupContent(stage) {
+    var now = new Date();
+    var color = stageColor(stage);
+    var html = '<div class="mk-pop__title">' +
+      '<span class="mk-pop__dot" style="background:' + color + '"></span>' +
+      escapeHtml(stage) + '</div>';
+
+    function actLink(t) {
+      return '<a class="mk-pop__act" href="#artiest/' + escapeHtml(t.artist.id) + '">' +
+        (t.artist.tip ? '★ ' : '') + escapeHtml(t.artist.name) + '</a>';
+    }
+
+    if (now > FEST_END_TS) {
+      html += '<div class="mk-pop__line">Wildeburg is voorbij 🌲</div>';
+      return html;
+    }
+    if (now < FEST_START_TS) {
+      var first = stageNowNext(stage, -1).first; // -1 => geen current; first = eerste act
+      if (first) {
+        html += '<div class="mk-pop__line">Eerste act: ' +
+          escapeHtml(first.slot.day) + ' ' + escapeHtml(first.slot.start) + ' ' +
+          actLink(first) + '</div>';
+      } else {
+        html += '<div class="mk-pop__line">Nog geen programma bekend.</div>';
+      }
+      return html;
+    }
+
+    // Tijdens het festival
+    var gn = (now - FEST_START_TS) / 3600000;
+    var nn = stageNowNext(stage, gn);
+    if (nn.current) {
+      html += '<div class="mk-pop__line"><strong>Nu:</strong> ' + actLink(nn.current) +
+        ' <span class="mk-pop__t">(tot ' + escapeHtml(nn.current.slot.end) + ')</span></div>';
+    }
+    if (nn.next) {
+      html += '<div class="mk-pop__line"><strong>Straks:</strong> ' + actLink(nn.next) +
+        ' <span class="mk-pop__t">(' + escapeHtml(nn.next.slot.start) + ')</span></div>';
+    }
+    if (!nn.current && !nn.next) {
+      html += '<div class="mk-pop__line">Geen act meer op dit podium.</div>';
+    }
+    return html;
+  }
+
+  function openMapPopup(stage, infoName) {
+    closeMapPopup();
+    var content = infoName
+      ? '<div class="mk-pop__title"><span class="mk-pop__dot mk-pop__dot--info"></span>' +
+        escapeHtml(infoName) + '</div>'
+      : buildStagePopupContent(stage);
+
+    var pop = document.createElement("div");
+    pop.className = "mk-pop";
+    pop.innerHTML = '<button class="mk-pop__close" aria-label="Sluiten">×</button>' + content;
+    el("view").appendChild(pop);
+    mapPopupEl = pop;
+
+    var bd = el("mapPopBackdrop");
+    if (bd) bd.hidden = false;
+
+    pop.querySelector(".mk-pop__close").addEventListener("click", function (e) {
+      e.stopPropagation();
+      closeMapPopup();
+    });
+    // Klik binnen de popup mag niet "buiten-sluiten" triggeren.
+    pop.addEventListener("click", function (e) { e.stopPropagation(); });
+    // Na navigeren via een act-link de popup opruimen.
+    pop.querySelectorAll(".mk-pop__act").forEach(function (a) {
+      a.addEventListener("click", function () { closeMapPopup(); });
+    });
+  }
+
+  // Centreer een marker in het scroll-venster van de kaart.
+  function centerMapMarker(marker) {
+    var sc = el("mapScroll"), innerEl = el("mapInner");
+    if (!sc || !innerEl || !marker) return;
+    var xPct = parseFloat(marker.style.left) / 100;
+    var yPct = parseFloat(marker.style.top) / 100;
+    sc.scrollLeft = innerEl.offsetWidth * xPct - sc.clientWidth / 2;
+    sc.scrollTop = innerEl.offsetHeight * yPct - sc.clientHeight / 2;
+  }
+
+  function renderMap(focusSlug) {
+    currentView = "kaart";
+
+    var markersHtml = "";
+    STAGE_MARKERS.forEach(function (m) {
+      var slug = stageSlug(m.stage);
+      markersHtml += '<button class="map-marker map-marker--stage" ' +
+        'data-stageslug="' + escapeHtml(slug) + '" ' +
+        'style="left:' + m.x + '%;top:' + m.y + '%;--stage-color:' + stageColor(m.stage) + '" ' +
+        'aria-label="' + escapeHtml(m.stage) + '"></button>';
+    });
+    INFO_MARKERS.forEach(function (m) {
+      markersHtml += '<button class="map-marker map-marker--info" ' +
+        'data-infoname="' + escapeHtml(m.name) + '" ' +
+        'style="left:' + m.x + '%;top:' + m.y + '%" ' +
+        'aria-label="' + escapeHtml(m.name) + '"></button>';
+    });
+
+    var html =
+      '<div class="map-wrap">' +
+        '<div class="map-zoom">' +
+          '<button class="map-zoom__btn" type="button" data-zoom="in" aria-label="Inzoomen">+</button>' +
+          '<button class="map-zoom__btn" type="button" data-zoom="out" aria-label="Uitzoomen">−</button>' +
+          '<button class="map-zoom__btn" type="button" data-zoom="reset" aria-label="Zoom resetten">⤢</button>' +
+        '</div>' +
+        '<div class="map-scroll" id="mapScroll">' +
+          '<div class="map-inner" id="mapInner" style="width:100%;">' +
+            '<img class="map-img" id="mapImg" src="./kaart.jpg" ' +
+            'alt="Plattegrond Wildeburg 2026">' +
+            markersHtml +
+          '</div>' +
+        '</div>' +
+      '</div>' +
+      '<p class="map-source">Plattegrond © ' +
+        '<a href="https://wildeburg.nl" target="_blank" rel="noopener">Wildeburg — wildeburg.nl</a></p>' +
+      '<div class="map-pop-backdrop" id="mapPopBackdrop" hidden></div>';
+
+    el("view").innerHTML = html;
+    scrollTop();
+
+    // ---- Zoom ----
+    var ZOOM_LEVELS = [100, 175, 250];
+    var zoomIdx = 0;
+    var inner = el("mapInner");
+    function applyZoom() { inner.style.width = ZOOM_LEVELS[zoomIdx] + "%"; }
+    document.querySelectorAll("[data-zoom]").forEach(function (b) {
+      b.addEventListener("click", function () {
+        var z = b.getAttribute("data-zoom");
+        if (z === "in") zoomIdx = Math.min(ZOOM_LEVELS.length - 1, zoomIdx + 1);
+        else if (z === "out") zoomIdx = Math.max(0, zoomIdx - 1);
+        else zoomIdx = 0;
+        applyZoom();
+      });
+    });
+
+    // ---- Marker-kliks ----
+    document.querySelectorAll(".map-marker--stage").forEach(function (mk) {
+      mk.addEventListener("click", function (e) {
+        e.stopPropagation();
+        openMapPopup(SLUG_STAGE[mk.getAttribute("data-stageslug")], null);
+      });
+    });
+    document.querySelectorAll(".map-marker--info").forEach(function (mk) {
+      mk.addEventListener("click", function (e) {
+        e.stopPropagation();
+        openMapPopup(null, mk.getAttribute("data-infoname"));
+      });
+    });
+
+    // Tik-buiten-sluit (op de kaart of op de backdrop).
+    el("mapScroll").addEventListener("click", closeMapPopup);
+    var bd = el("mapPopBackdrop");
+    if (bd) bd.addEventListener("click", closeMapPopup);
+
+    // ---- Deep-link: pulse + centreer (+ popup) ----
+    if (focusSlug) {
+      var target = document.querySelector(
+        '.map-marker--stage[data-stageslug="' + focusSlug + '"]');
+      if (target) {
+        target.classList.add("is-pulse");
+        var focusStage = SLUG_STAGE[focusSlug];
+        var doFocus = function () {
+          centerMapMarker(target);
+          openMapPopup(focusStage, null);
+        };
+        var img = el("mapImg");
+        if (img && img.complete && img.naturalWidth > 0) {
+          requestAnimationFrame(doFocus);
+        } else if (img) {
+          img.addEventListener("load", function () { requestAnimationFrame(doFocus); });
+        }
+        // Vangnet als de load-event al gepasseerd was.
+        setTimeout(function () { centerMapMarker(target); }, 300);
+      }
+    }
+  }
+
+  // ---- Start ----
+  // Lege hash => HOME (default). route() vangt hash === "" zelf af, dus we
+  // hoeven geen default-hash te forceren.
   route();
 })();

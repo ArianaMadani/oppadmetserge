@@ -752,6 +752,367 @@ body {
   font-size: 14.5px;
 }
 
+/* ---------- Home ---------- */
+.home { display: block; }
+
+.home-hero {
+  background: var(--sand-50);
+  border-radius: var(--radius);
+  padding: 18px 16px;
+  box-shadow: var(--shadow);
+  border-left: 6px solid var(--coral);
+  margin-bottom: 6px;
+}
+.home-hero__title {
+  margin: 0 0 6px;
+  font-size: 21px;
+  font-weight: 800;
+  color: var(--green-800);
+}
+.home-hero__intro {
+  margin: 0;
+  font-size: 14.5px;
+  line-height: 1.5;
+  color: var(--ink);
+}
+
+.home-block { margin-top: 4px; }
+
+/* "Nu op Wildeburg" */
+.home-now {
+  background: var(--green-900);
+  border-radius: var(--radius);
+  padding: 14px;
+  box-shadow: var(--shadow);
+}
+.home-now__count {
+  font-size: 20px;
+  font-weight: 800;
+  color: var(--sand-50);
+  line-height: 1.25;
+}
+.home-now__sub {
+  margin-top: 6px;
+  font-size: 13px;
+  color: var(--sand-300);
+}
+.home-now__list {
+  display: flex;
+  flex-direction: column;
+  gap: 9px;
+}
+.home-now__act {
+  display: flex;
+  align-items: flex-start;
+  gap: 11px;
+  text-decoration: none;
+  background: var(--sand-50);
+  border-radius: var(--radius-sm);
+  padding: 11px 13px;
+  box-shadow: var(--shadow);
+  border-left: 6px solid var(--stage-color, var(--green-600));
+  color: var(--ink);
+  transition: transform 0.08s ease;
+}
+.home-now__act:active { transform: scale(0.99); }
+.home-now__dot {
+  flex: none;
+  width: 12px; height: 12px;
+  border-radius: 50%;
+  margin-top: 4px;
+  background: var(--stage-color, var(--green-600));
+}
+.home-now__info { display: flex; flex-direction: column; gap: 1px; min-width: 0; }
+.home-now__stage {
+  font-size: 11.5px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.4px;
+  color: var(--ink-soft);
+}
+.home-now__name {
+  font-size: 16px;
+  font-weight: 800;
+  color: var(--green-800);
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+.home-now__star { color: var(--gold); font-size: 14px; }
+.home-now__heart { font-size: 13px; }
+.home-now__till {
+  font-size: 12.5px;
+  font-weight: 700;
+  color: var(--coral-dark);
+  margin-top: 1px;
+}
+.home-now__next {
+  font-size: 12px;
+  color: var(--ink-soft);
+  margin-top: 2px;
+}
+
+/* Stat-tegels */
+.home-stats {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 9px;
+  margin: 14px 0 4px;
+}
+.home-stat {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 3px;
+  text-align: center;
+  text-decoration: none;
+  cursor: pointer;
+  font-family: inherit;
+  border: none;
+  background: var(--green-700);
+  color: var(--sand-100);
+  border-radius: var(--radius-sm);
+  padding: 14px 8px;
+  box-shadow: var(--shadow);
+  transition: transform 0.08s ease, background-color 0.15s ease;
+}
+.home-stat:active { transform: scale(0.98); }
+.home-stat__num {
+  font-size: 22px;
+  font-weight: 800;
+  color: var(--sand-50);
+  line-height: 1.1;
+}
+.home-stat__label {
+  font-size: 11.5px;
+  font-weight: 600;
+  color: var(--sand-300);
+}
+@media (hover: hover) {
+  .home-stat:hover { background-color: var(--green-600); }
+}
+.home-stat:focus-visible {
+  outline: 2px solid var(--coral);
+  outline-offset: 2px;
+}
+
+/* Over Serge */
+.home-serge { margin-top: 10px; }
+.home-serge__figure {
+  margin: 0 0 12px;
+  text-align: center;
+}
+.home-serge__img {
+  display: block;
+  width: 100%;
+  max-width: 420px;
+  margin: 0 auto;
+  border-radius: var(--radius);
+  box-shadow: var(--shadow-lg);
+}
+.home-serge__caption {
+  margin: 8px auto 0;
+  max-width: 420px;
+  font-size: 12.5px;
+  font-style: italic;
+  color: var(--sand-300);
+}
+.home-serge__text {
+  background: var(--sand-50);
+  border-radius: var(--radius);
+  padding: 16px 16px 6px;
+  box-shadow: var(--shadow);
+}
+.home-serge__text p {
+  margin: 0 0 12px;
+  font-size: 14.5px;
+  line-height: 1.55;
+  color: var(--ink);
+}
+
+/* ---------- Kaart ---------- */
+.map-wrap {
+  position: relative;
+  border-radius: var(--radius);
+  overflow: hidden;
+  box-shadow: var(--shadow);
+  background: var(--green-900);
+}
+.map-scroll {
+  overflow: auto;
+  -webkit-overflow-scrolling: touch;
+  max-height: 72vh;
+  background: #f4efe3;
+}
+.map-inner {
+  position: relative;
+  width: 100%;
+  transition: width 0.18s ease;
+}
+.map-img {
+  display: block;
+  width: 100%;
+  height: auto;
+  user-select: none;
+  -webkit-user-drag: none;
+}
+
+/* Markers */
+.map-marker {
+  position: absolute;
+  transform: translate(-50%, -50%);
+  border: 2px solid #fff;
+  border-radius: 50%;
+  padding: 0;
+  cursor: pointer;
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.45);
+  z-index: 5;
+  -webkit-tap-highlight-color: transparent;
+}
+.map-marker--stage {
+  width: 22px;
+  height: 22px;
+  background: var(--stage-color, var(--green-600));
+}
+.map-marker--info {
+  width: 16px;
+  height: 16px;
+  background: #8a8778;
+  z-index: 4;
+}
+.map-marker:active { transform: translate(-50%, -50%) scale(1.15); }
+.map-marker:focus-visible {
+  outline: 3px solid var(--coral);
+  outline-offset: 2px;
+}
+.map-marker.is-pulse {
+  animation: markerPulse 1s ease-out 3;
+  z-index: 8;
+}
+@keyframes markerPulse {
+  0%   { box-shadow: 0 0 0 0 rgba(255, 111, 77, 0.7), 0 1px 4px rgba(0,0,0,0.45); }
+  70%  { box-shadow: 0 0 0 16px rgba(255, 111, 77, 0), 0 1px 4px rgba(0,0,0,0.45); }
+  100% { box-shadow: 0 0 0 0 rgba(255, 111, 77, 0), 0 1px 4px rgba(0,0,0,0.45); }
+}
+
+/* Zoom-knoppen */
+.map-zoom {
+  position: absolute;
+  top: 10px;
+  right: 10px;
+  z-index: 10;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+.map-zoom__btn {
+  width: 38px;
+  height: 38px;
+  border: none;
+  cursor: pointer;
+  font-family: inherit;
+  font-size: 20px;
+  font-weight: 800;
+  line-height: 1;
+  border-radius: 10px;
+  background: var(--green-800);
+  color: var(--sand-50);
+  box-shadow: var(--shadow-lg);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.map-zoom__btn:active { transform: scale(0.94); }
+@media (hover: hover) {
+  .map-zoom__btn:hover { background: var(--green-700); }
+}
+.map-zoom__btn:focus-visible {
+  outline: 2px solid var(--coral);
+  outline-offset: 2px;
+}
+
+.map-source {
+  font-size: 12px;
+  color: var(--sand-300);
+  margin: 8px 4px 0;
+}
+.map-source a { color: var(--sand-100); }
+
+/* Backdrop achter een geopende popup (tik-buiten-sluit) */
+.map-pop-backdrop {
+  position: fixed;
+  left: 0; right: 0; top: 0; bottom: 0;
+  z-index: 60;
+  background: rgba(20, 43, 30, 0.28);
+}
+
+/* Popup-kaartje (onderaan gefixeerd) */
+.mk-pop {
+  position: fixed;
+  left: 12px;
+  right: 12px;
+  bottom: calc(var(--tabbar-h) + env(safe-area-inset-bottom) + 12px);
+  z-index: 61;
+  max-width: 460px;
+  margin: 0 auto;
+  background: var(--sand-50);
+  border-radius: var(--radius);
+  padding: 14px 16px 16px;
+  box-shadow: var(--shadow-lg);
+  border-top: 6px solid var(--coral);
+}
+.mk-pop__close {
+  position: absolute;
+  top: 6px; right: 8px;
+  border: none;
+  background: none;
+  cursor: pointer;
+  font-size: 24px;
+  line-height: 1;
+  color: var(--ink-soft);
+  padding: 4px 8px;
+}
+.mk-pop__title {
+  font-size: 17px;
+  font-weight: 800;
+  color: var(--green-800);
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 6px;
+  padding-right: 24px;
+}
+.mk-pop__dot {
+  width: 13px; height: 13px;
+  border-radius: 50%;
+  flex: none;
+  background: var(--green-600);
+}
+.mk-pop__dot--info { background: #8a8778; }
+.mk-pop__line {
+  font-size: 14px;
+  color: var(--ink);
+  margin-top: 4px;
+  line-height: 1.4;
+}
+.mk-pop__t { color: var(--ink-soft); font-size: 13px; }
+.mk-pop__act {
+  color: var(--coral-dark);
+  font-weight: 700;
+  text-decoration: none;
+}
+.mk-pop__act:active { opacity: 0.7; }
+
+/* Klikbare podium-regel in het artiestdetail */
+.slot-line__stage--link {
+  color: var(--ink-soft);
+  text-decoration: underline;
+  text-underline-offset: 2px;
+  cursor: pointer;
+}
+
 /* ---------- Desktop ---------- */
 @media (min-width: 720px) {
   .card-list {

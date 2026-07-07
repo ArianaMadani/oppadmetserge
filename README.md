@@ -7,11 +7,19 @@ een persoonlijk tijdschema.
 
 ## Wat kun je ermee?
 
+- **🏠 Home** — het startscherm. Een korte welkomsttekst, een live "Nu op
+  Wildeburg"-blok (vóór het festival een aftel-teller, tijdens het festival per
+  podium de act die nú speelt), drie snelkoppelingen (aantal acts, tips van Serge,
+  jouw favorieten) en een stukje "Over Serge".
 - **🎵 Artiesten** — alle artiesten op alfabet, met genre-labels, de notities van
   Serge en een ★ bij zijn tips. Zoek op naam, genre of omschrijving, of
   filter op genre, alleen tips, of alleen je favorieten.
 - **📅 Schema** — het blokkenschema per dag (vrijdag / zaterdag / zondag). Veeg
   het schema naar links en rechts. De nacht loopt gewoon door tot ’s ochtends.
+- **📍 Kaart** — de officiële plattegrond met een gekleurde stip op elk podium.
+  Zoom in/uit met de knopjes en tik op een podium om te zien wat er nú (of als
+  eerste) speelt. Vanaf een artiestenpagina brengt de podium-regel je meteen naar
+  de juiste plek op de kaart.
 - **❤️ Mijn schema** — tik bij een artiest op het hartje en die verschijnt hier,
   netjes op tijd gesorteerd per dag. Overlappen twee favorieten qua tijd? Dan
   krijg je een waarschuwing.
@@ -30,11 +38,14 @@ Zo kun je hem op je telefoon gebruiken zonder de bestanden mee te nemen:
 2. Klik rechtsboven op **+** → **New repository**. Geef ’m een naam
    (bijvoorbeeld `wildeburg`) en klik op **Create repository**.
 3. Klik op **uploading an existing file** (of: **Add file → Upload files**) en
-   sleep deze vier bestanden erin:
+   sleep al deze bestanden erin:
    - `index.html`
    - `style.css`
    - `app.js`
    - `data.js`
+   - `sw.js` (voor offline gebruik op het festivalterrein)
+   - `serge.jpg` (de foto bij "Over Serge")
+   - `kaart.jpg` (de plattegrond op de Kaart-tab)
 
    Klik daarna op **Commit changes**.
 4. Ga in je repository naar **Settings** (tabblad bovenaan) → **Pages** (links in

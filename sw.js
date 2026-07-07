@@ -8,8 +8,9 @@
 
 // Cache-versie met datum. Bij een nieuwe versie: verhoog de datum -> oude cache
 // wordt in 'activate' opgeruimd en de nieuwe bestanden worden opnieuw gecachet.
-var CACHE = "wildeburg-v2026-07-07";
+var CACHE = "wildeburg-v2026-07-07c";
 
+// Kern-bestanden: alles-of-niets (de app moet compleet offline werken).
 var ASSETS = [
   "./",
   "./index.html",
@@ -18,10 +19,22 @@ var ASSETS = [
   "./data.js"
 ];
 
+// Optionele bestanden: individueel cachen mét catch, zodat een 404 (bv. als
+// serge.jpg nog niet is toegevoegd) de installatie NIET laat mislukken.
+var OPTIONAL_ASSETS = [
+  "./serge.jpg",
+  "./kaart.jpg"
+];
+
 self.addEventListener("install", function (event) {
   event.waitUntil(
     caches.open(CACHE).then(function (cache) {
-      return cache.addAll(ASSETS);
+      return cache.addAll(ASSETS).then(function () {
+        // Optionele assets stuk voor stuk; faal niet als er eentje ontbreekt.
+        return Promise.all(OPTIONAL_ASSETS.map(function (url) {
+          return cache.add(url).catch(function () { /* bestand ontbreekt: prima */ });
+        }));
+      });
     })
   );
   // Nieuwe worker meteen actief maken (geen wachtstand).
