@@ -1,0 +1,701 @@
+/* ========================================================================
+   Op pad met Serge — Wildeburg 2026
+   Bosfestival-sfeer: donkergroen, warm zand/crème, koraal accent.
+   Mobile-first, geen externe fonts/dependencies.
+   ======================================================================== */
+
+:root {
+  /* Basis */
+  --green-900: #142b1e;
+  --green-800: #1d3a2a;
+  --green-700: #274d38;
+  --green-600: #326049;
+  --sand-50:  #fbf6ea;
+  --sand-100: #f5edd8;
+  --sand-200: #ece0c2;
+  --sand-300: #ddcda2;
+  --ink:      #22301f;
+  --ink-soft: #4a5a45;
+
+  /* Accent (hartjes / actief) */
+  --coral:      #ff6f4d;
+  --coral-dark: #e2542f;
+  --gold:       #f2b544;
+
+  /* UI */
+  --radius:     16px;
+  --radius-sm:  10px;
+  --shadow:     0 2px 8px rgba(20, 43, 30, 0.12);
+  --shadow-lg:  0 6px 20px rgba(20, 43, 30, 0.18);
+
+  --header-h: 64px;
+  --tabbar-h: 66px;
+
+  --font: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica,
+          Arial, "Apple Color Emoji", "Segoe UI Emoji", sans-serif;
+}
+
+/* Podium-kleuren (herkenbaar in schema én op kaarten) */
+:root {
+  --stage-wildlive:   #e8623a;
+  --stage-strand:     #2aa6c4;
+  --stage-helling:    #7b5cd6;
+  --stage-budx:       #c8447e;
+  --stage-bamboebos:  #3f9e56;
+  --stage-duinpan:    #d99b28;
+  --stage-studio:     #b0863a;
+  --stage-achtertuin: #d8a83c;
+  --stage-kas:        #5c9a6f;
+}
+
+* { box-sizing: border-box; }
+
+html, body {
+  margin: 0;
+  padding: 0;
+}
+
+body {
+  font-family: var(--font);
+  color: var(--ink);
+  background: var(--green-800);
+  -webkit-font-smoothing: antialiased;
+  line-height: 1.4;
+}
+
+/* ---------- Header ---------- */
+.app-header {
+  position: sticky;
+  top: 0;
+  z-index: 40;
+  background: linear-gradient(135deg, var(--green-800), var(--green-700));
+  color: var(--sand-50);
+  padding: max(env(safe-area-inset-top), 8px) 16px 10px;
+  box-shadow: var(--shadow);
+}
+.app-header__inner { max-width: 900px; margin: 0 auto; }
+.app-header__title {
+  margin: 0;
+  font-size: 22px;
+  font-weight: 800;
+  letter-spacing: 0.2px;
+}
+.app-header__subtitle {
+  margin: 2px 0 0;
+  font-size: 13px;
+  color: var(--sand-200);
+  font-weight: 500;
+}
+
+/* ---------- View / layout ---------- */
+.view {
+  max-width: 900px;
+  margin: 0 auto;
+  padding: 14px 14px calc(var(--tabbar-h) + env(safe-area-inset-bottom) + 20px);
+  background: var(--green-800);
+  min-height: calc(100vh - var(--header-h));
+}
+
+.section-title {
+  color: var(--sand-100);
+  font-size: 17px;
+  font-weight: 700;
+  margin: 18px 4px 8px;
+}
+.muted { color: var(--sand-300); }
+
+/* ---------- Bottom tabbar ---------- */
+.tabbar {
+  position: fixed;
+  left: 0; right: 0; bottom: 0;
+  z-index: 50;
+  display: flex;
+  background: var(--green-900);
+  border-top: 1px solid rgba(255,255,255,0.08);
+  padding-bottom: env(safe-area-inset-bottom);
+  box-shadow: 0 -2px 12px rgba(0,0,0,0.25);
+}
+.tabbar__btn {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 2px;
+  padding: 9px 4px 8px;
+  min-height: var(--tabbar-h);
+  text-decoration: none;
+  color: var(--sand-300);
+  font-size: 11.5px;
+  font-weight: 600;
+  transition: color 0.15s;
+}
+.tabbar__icon { font-size: 22px; line-height: 1; }
+.tabbar__btn.is-active { color: var(--coral); }
+.tabbar__btn.is-active .tabbar__icon { transform: translateY(-1px); }
+
+/* ---------- Zoek / filter ---------- */
+.searchbar {
+  position: relative;
+  margin: 4px 0 12px;
+}
+.searchbar input {
+  width: 100%;
+  font-size: 16px;
+  font-family: inherit;
+  padding: 13px 14px 13px 42px;
+  border: none;
+  border-radius: var(--radius);
+  background: var(--sand-50);
+  color: var(--ink);
+  box-shadow: var(--shadow);
+}
+.searchbar input::placeholder { color: #8a8570; }
+.searchbar__icon {
+  position: absolute;
+  left: 14px; top: 50%;
+  transform: translateY(-50%);
+  font-size: 17px;
+  pointer-events: none;
+  opacity: 0.6;
+}
+
+.filter-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-bottom: 6px;
+}
+.toggle-chip {
+  border: none;
+  cursor: pointer;
+  font-family: inherit;
+  font-size: 13px;
+  font-weight: 600;
+  padding: 8px 13px;
+  border-radius: 999px;
+  background: var(--green-700);
+  color: var(--sand-100);
+  box-shadow: var(--shadow);
+}
+.toggle-chip.is-active {
+  background: var(--coral);
+  color: #fff;
+}
+
+.genre-filters {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 7px;
+  margin: 6px 0 4px;
+}
+.genre-chip {
+  border: 1px solid rgba(255,255,255,0.14);
+  cursor: pointer;
+  font-family: inherit;
+  font-size: 12.5px;
+  font-weight: 600;
+  padding: 6px 11px;
+  border-radius: 999px;
+  background: rgba(255,255,255,0.04);
+  color: var(--sand-200);
+  transition: background 0.12s;
+}
+.genre-chip.is-active {
+  background: var(--sand-100);
+  color: var(--green-800);
+  border-color: var(--sand-100);
+}
+.genre-more {
+  background: none;
+  border: none;
+  color: var(--coral);
+  font-weight: 700;
+  font-size: 12.5px;
+  cursor: pointer;
+  font-family: inherit;
+  padding: 6px 4px;
+}
+
+.result-count {
+  color: var(--sand-300);
+  font-size: 12.5px;
+  margin: 8px 4px 4px;
+}
+
+/* ---------- Artiestenkaarten ---------- */
+.card-list {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+.artist-card {
+  position: relative;
+  display: block;
+  width: 100%;
+  text-align: left;
+  border: none;
+  cursor: pointer;
+  font-family: inherit;
+  background: var(--sand-50);
+  border-radius: var(--radius);
+  padding: 13px 52px 13px 14px;
+  box-shadow: var(--shadow);
+  border-left: 6px solid var(--stage-color, var(--green-600));
+  color: var(--ink);
+  transition: transform 0.08s ease;
+}
+.artist-card:active { transform: scale(0.99); }
+
+.artist-card__name {
+  font-size: 16.5px;
+  font-weight: 700;
+  margin: 0 0 5px;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+.tip-badge {
+  color: var(--gold);
+  font-size: 15px;
+}
+.artist-card__genres,
+.chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 5px;
+  margin: 4px 0 6px;
+}
+.mini-chip {
+  font-size: 11px;
+  font-weight: 600;
+  padding: 3px 8px;
+  border-radius: 999px;
+  background: var(--sand-200);
+  color: var(--ink-soft);
+}
+.artist-card__slots {
+  font-size: 12.5px;
+  color: var(--ink-soft);
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+.slot-line-mini { display: flex; gap: 6px; flex-wrap: wrap; }
+.slot-line-mini .dot {
+  display: inline-block;
+  width: 9px; height: 9px;
+  border-radius: 50%;
+  align-self: center;
+  background: var(--stage-color, var(--green-600));
+}
+.slot-none {
+  font-size: 12px;
+  font-style: italic;
+  color: #9a9075;
+}
+
+/* Hartje op de kaart (favoriet) */
+.fav-btn {
+  border: none;
+  background: none;
+  cursor: pointer;
+  padding: 6px;
+  line-height: 1;
+  border-radius: 50%;
+  font-size: 22px;
+  transition: transform 0.12s;
+  -webkit-tap-highlight-color: transparent;
+}
+.fav-btn:active { transform: scale(1.25); }
+.fav-btn.is-fav { filter: none; }
+.fav-btn__heart-empty { opacity: 0.9; }
+
+.artist-card .fav-btn {
+  position: absolute;
+  top: 8px; right: 8px;
+}
+
+/* ---------- Artiestdetail ---------- */
+.detail {
+  background: var(--sand-50);
+  border-radius: var(--radius);
+  padding: 18px 16px 20px;
+  box-shadow: var(--shadow-lg);
+  border-top: 8px solid var(--stage-color, var(--green-600));
+}
+.back-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  background: var(--green-700);
+  color: var(--sand-100);
+  border: none;
+  cursor: pointer;
+  font-family: inherit;
+  font-size: 14px;
+  font-weight: 600;
+  padding: 10px 15px;
+  border-radius: 999px;
+  margin-bottom: 12px;
+  box-shadow: var(--shadow);
+}
+.detail__name {
+  font-size: 26px;
+  font-weight: 800;
+  margin: 0 0 8px;
+  color: var(--green-800);
+  line-height: 1.15;
+}
+.detail__tip {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  background: linear-gradient(135deg, var(--gold), #e9a11f);
+  color: #4a3406;
+  font-weight: 700;
+  font-size: 13px;
+  padding: 6px 12px;
+  border-radius: 999px;
+  margin-bottom: 10px;
+}
+.detail__desc {
+  font-size: 15.5px;
+  line-height: 1.55;
+  color: var(--ink);
+  margin: 12px 0 4px;
+}
+.detail__desc.is-empty { font-style: italic; color: #8a8163; }
+
+.detail__slots {
+  margin: 16px 0 4px;
+  display: flex;
+  flex-direction: column;
+  gap: 9px;
+}
+.slot-line {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  background: var(--sand-100);
+  border-radius: var(--radius-sm);
+  padding: 11px 13px;
+  border-left: 5px solid var(--stage-color, var(--green-600));
+}
+.slot-line__day {
+  font-weight: 700;
+  color: var(--green-800);
+  min-width: 82px;
+}
+.slot-line__body { flex: 1; font-size: 14px; }
+.slot-line__time { font-weight: 700; }
+.slot-line__stage { color: var(--ink-soft); }
+.tag-live, .tag-label {
+  display: inline-block;
+  font-size: 10.5px;
+  font-weight: 800;
+  padding: 2px 7px;
+  border-radius: 999px;
+  margin-left: 6px;
+  vertical-align: middle;
+}
+.tag-live  { background: var(--coral); color: #fff; }
+.tag-label { background: var(--green-600); color: var(--sand-50); font-weight: 700; }
+
+.detail__fav {
+  margin-top: 18px;
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 9px;
+  border: none;
+  cursor: pointer;
+  font-family: inherit;
+  font-size: 16px;
+  font-weight: 700;
+  padding: 15px;
+  border-radius: var(--radius);
+  background: var(--green-700);
+  color: var(--sand-50);
+  box-shadow: var(--shadow);
+}
+.detail__fav.is-fav { background: var(--coral); color: #fff; }
+.detail__fav .big-heart { font-size: 20px; }
+
+/* ---------- Blokkenschema ---------- */
+.day-switcher {
+  display: flex;
+  gap: 8px;
+  margin: 2px 0 14px;
+}
+.day-switcher button {
+  flex: 1;
+  border: none;
+  cursor: pointer;
+  font-family: inherit;
+  font-size: 14px;
+  font-weight: 700;
+  padding: 11px 8px;
+  border-radius: var(--radius-sm);
+  background: var(--green-700);
+  color: var(--sand-200);
+  box-shadow: var(--shadow);
+}
+.day-switcher button small { display: block; font-weight: 500; font-size: 11px; opacity: 0.85; }
+.day-switcher button.is-active {
+  background: var(--sand-100);
+  color: var(--green-800);
+}
+
+/* Grid: sticky podiumkolom + horizontaal scrollende tijd-as */
+.schedule-scroll {
+  overflow-x: auto;
+  overflow-y: visible;
+  -webkit-overflow-scrolling: touch;
+  border-radius: var(--radius);
+  background: var(--green-900);
+  box-shadow: var(--shadow);
+}
+.schedule-grid {
+  display: grid;
+  position: relative;
+}
+.sched-cell { position: relative; }
+
+/* Tijd-as (bovenaan, sticky) */
+.time-head {
+  position: sticky;
+  top: 0;
+  z-index: 20;
+  background: var(--green-900);
+  color: var(--sand-300);
+  font-size: 11px;
+  font-weight: 600;
+  text-align: left;
+  padding: 6px 0 6px 4px;
+  border-left: 1px solid rgba(255,255,255,0.06);
+  height: 30px;
+}
+.time-head.corner {
+  z-index: 30;
+  left: 0;
+  background: var(--green-900);
+  border-left: none;
+}
+
+/* Podium-labels (links, sticky) */
+.stage-label {
+  position: sticky;
+  left: 0;
+  z-index: 15;
+  display: flex;
+  align-items: center;
+  padding: 4px 8px;
+  font-size: 12px;
+  font-weight: 700;
+  color: #fff;
+  background: var(--green-900);
+  border-top: 1px solid rgba(255,255,255,0.06);
+  min-height: 50px;
+}
+.stage-label__swatch {
+  width: 4px;
+  align-self: stretch;
+  border-radius: 2px;
+  margin-right: 8px;
+  background: var(--stage-color, var(--green-600));
+}
+
+.stage-row-bg {
+  border-top: 1px solid rgba(255,255,255,0.06);
+  border-left: 1px solid rgba(255,255,255,0.05);
+}
+
+/* Blokken in het grid */
+.sched-block {
+  position: absolute;
+  top: 4px;
+  bottom: 4px;
+  border: none;
+  cursor: pointer;
+  font-family: inherit;
+  border-radius: 8px;
+  padding: 4px 6px;
+  overflow: hidden;
+  text-align: left;
+  color: #fff;
+  background: var(--stage-color, var(--green-600));
+  box-shadow: 0 1px 3px rgba(0,0,0,0.3);
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  min-width: 0;
+}
+.sched-block__name {
+  font-size: 11.5px;
+  font-weight: 700;
+  line-height: 1.15;
+  white-space: normal;
+  overflow: hidden;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+}
+.sched-block__time {
+  font-size: 9.5px;
+  opacity: 0.9;
+  margin-top: 1px;
+  white-space: nowrap;
+}
+.sched-block.is-tip::after {
+  content: "★";
+  position: absolute;
+  top: 2px; right: 3px;
+  font-size: 10px;
+  color: var(--gold);
+  text-shadow: 0 1px 1px rgba(0,0,0,0.4);
+}
+.sched-block.is-fav {
+  outline: 3px solid var(--coral);
+  outline-offset: -3px;
+  box-shadow: 0 0 0 2px rgba(255,111,77,0.4), 0 2px 6px rgba(0,0,0,0.4);
+}
+.sched-block.is-fav .fav-corner {
+  position: absolute;
+  bottom: 2px; right: 3px;
+  font-size: 11px;
+}
+
+/* "Verder deze dag" (slots zonder tijd) */
+.no-time-section { margin-top: 16px; }
+.no-time-stage { margin-bottom: 10px; }
+.no-time-stage__head {
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--sand-100);
+  margin-bottom: 5px;
+  display: flex;
+  align-items: center;
+  gap: 7px;
+}
+.no-time-stage__head .swatch {
+  width: 11px; height: 11px; border-radius: 3px;
+  background: var(--stage-color, var(--green-600));
+}
+.no-time-chips { display: flex; flex-wrap: wrap; gap: 7px; }
+.no-time-chip {
+  border: none;
+  cursor: pointer;
+  font-family: inherit;
+  font-size: 12.5px;
+  font-weight: 600;
+  padding: 7px 11px;
+  border-radius: 999px;
+  background: var(--sand-100);
+  color: var(--green-800);
+  box-shadow: var(--shadow);
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+}
+.no-time-chip.is-fav { background: var(--coral); color: #fff; }
+
+.schedule-hint {
+  font-size: 12px;
+  color: var(--sand-300);
+  margin: 10px 4px 0;
+}
+
+/* ---------- Mijn schema ---------- */
+.myday { margin-bottom: 20px; }
+.myday__head {
+  color: var(--sand-100);
+  font-size: 16px;
+  font-weight: 800;
+  margin: 0 4px 9px;
+  padding-bottom: 6px;
+  border-bottom: 1px solid rgba(255,255,255,0.1);
+}
+.timeline {
+  display: flex;
+  flex-direction: column;
+  gap: 9px;
+}
+.tl-item {
+  display: flex;
+  gap: 12px;
+  background: var(--sand-50);
+  border-radius: var(--radius-sm);
+  padding: 12px 13px;
+  box-shadow: var(--shadow);
+  border-left: 6px solid var(--stage-color, var(--green-600));
+  cursor: pointer;
+  text-align: left;
+  border-top: none; border-right: none; border-bottom: none;
+  font-family: inherit;
+  width: 100%;
+}
+.tl-item__time {
+  font-weight: 800;
+  color: var(--green-800);
+  font-size: 14px;
+  min-width: 96px;
+  white-space: nowrap;
+}
+.tl-item__body { flex: 1; }
+.tl-item__name {
+  font-weight: 700;
+  font-size: 15px;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+.tl-item__stage { font-size: 12.5px; color: var(--ink-soft); margin-top: 2px; }
+.tl-overlap {
+  margin-top: 6px;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--coral-dark);
+  background: #ffe7df;
+  border-radius: 8px;
+  padding: 5px 9px;
+}
+.tl-heart {
+  align-self: center;
+  font-size: 17px;
+}
+
+.no-time-fav-section {
+  margin-top: 8px;
+}
+.empty-state {
+  text-align: center;
+  padding: 40px 20px;
+  color: var(--sand-200);
+}
+.empty-state__emoji { font-size: 48px; }
+.empty-state h2 { margin: 14px 0 6px; color: var(--sand-50); font-size: 20px; }
+.empty-state p { margin: 6px auto; max-width: 320px; font-size: 14.5px; line-height: 1.5; }
+.empty-state .heart-inline { color: var(--coral); font-weight: 700; }
+
+.no-results {
+  text-align: center;
+  color: var(--sand-200);
+  padding: 30px 16px;
+  font-size: 14.5px;
+}
+
+/* ---------- Desktop ---------- */
+@media (min-width: 720px) {
+  .card-list {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 12px;
+  }
+  .app-header__title { font-size: 26px; }
+  .app-header__subtitle { font-size: 14px; }
+  .detail__name { font-size: 30px; }
+}

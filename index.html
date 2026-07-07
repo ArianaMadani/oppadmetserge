@@ -1,0 +1,44 @@
+<!DOCTYPE html>
+<html lang="nl">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+  <title>Op pad met Serge — Wildeburg 2026</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <header class="app-header">
+    <div class="app-header__inner">
+      <h1 class="app-header__title">Op pad met Serge</h1>
+      <p class="app-header__subtitle">Wildeburg 2026 · 10–12 juli · Kraggenburg</p>
+    </div>
+  </header>
+
+  <main id="view" class="view">
+    <!-- Wordt gevuld door app.js -->
+  </main>
+
+  <nav class="tabbar" aria-label="Hoofdnavigatie">
+    <a class="tabbar__btn" data-tab="artiesten" href="#artiesten">
+      <span class="tabbar__icon" aria-hidden="true">🎵</span>
+      <span class="tabbar__label">Artiesten</span>
+    </a>
+    <a class="tabbar__btn" data-tab="schema" href="#schema">
+      <span class="tabbar__icon" aria-hidden="true">📅</span>
+      <span class="tabbar__label">Schema</span>
+    </a>
+    <a class="tabbar__btn" data-tab="mijn" href="#mijn">
+      <span class="tabbar__icon" aria-hidden="true">❤️</span>
+      <span class="tabbar__label">Mijn schema</span>
+    </a>
+  </nav>
+
+  <!-- Data eerst laden (globale WILDEBURG_DATA), dan de app -->
+  <script src="data.js"></script>
+  <!-- data.js declareert `const WILDEBURG_DATA`; die staat in de global lexical
+       scope maar NIET op window. Hier zetten we 'm expliciet op window zodat app.js
+       (los <script>) er altijd bij kan, ook via file:// -->
+  <script>window.WILDEBURG_DATA = WILDEBURG_DATA;</script>
+  <script src="app.js"></script>
+</body>
+</html>
