@@ -1810,3 +1810,94 @@ body {
   padding: 12px 14px;
   margin: 10px 0;
 }
+
+/* --- Publiekstips (live uit de Google Sheet) --- */
+.pub-tips {
+  margin: 14px 0 4px;
+  padding: 12px 14px;
+  background: rgba(242, 181, 68, 0.12);
+  border: 2px solid var(--green-900);
+  border-radius: var(--radius-sm);
+  box-shadow: var(--stamp-sm);
+}
+.pub-tips__head {
+  font-family: var(--font-display);
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  font-size: 14px;
+  color: var(--ink);
+  margin-bottom: 6px;
+}
+.pub-tip {
+  font-style: italic;
+  color: var(--ink);
+  margin: 6px 0;
+  line-height: 1.45;
+}
+.pub-tip__van {
+  font-style: normal;
+  color: var(--ink-soft);
+  margin-left: 6px;
+  font-size: 13px;
+}
+
+/* --- Tip insturen (inklapbaar formulier op artiestdetail) --- */
+.tip-form {
+  margin: 12px 0 4px;
+  background: var(--sand-100);
+  border: 2px solid var(--green-900);
+  border-radius: var(--radius-sm);
+  box-shadow: var(--stamp-sm);
+}
+.tip-form summary {
+  cursor: pointer;
+  padding: 11px 14px;
+  font-family: var(--font-display);
+  text-transform: uppercase;
+  letter-spacing: 0.8px;
+  font-size: 13.5px;
+  color: var(--ink);
+  list-style: none;
+}
+.tip-form summary::-webkit-details-marker { display: none; }
+.tip-form summary::after { content: " ▾"; color: var(--coral); }
+.tip-form[open] summary::after { content: " ▴"; }
+.tip-form__body { padding: 0 14px 14px; position: relative; }
+.tip-form__body textarea,
+.tip-form__body input[type="text"] {
+  width: 100%;
+  font-family: inherit;
+  font-size: 15px;
+  padding: 10px 12px;
+  margin-bottom: 8px;
+  border: 2px solid var(--green-900);
+  border-radius: var(--radius-sm);
+  background: var(--sand-50);
+  color: var(--ink);
+  resize: vertical;
+}
+.tip-form__send {
+  font-family: var(--font-display);
+  text-transform: uppercase;
+  letter-spacing: 0.8px;
+  font-size: 14px;
+  padding: 10px 18px;
+  background: var(--coral);
+  color: #fff;
+  border: 2px solid var(--green-900);
+  border-radius: var(--radius-sm);
+  box-shadow: var(--stamp-sm);
+  cursor: pointer;
+}
+.tip-form__send:disabled { opacity: 0.6; cursor: default; }
+.tip-form__send:active { transform: translate(2px, 2px); box-shadow: 1px 1px 0 rgba(10, 22, 15, 0.5); }
+.tip-form__feedback {
+  margin-top: 8px;
+  font-weight: 600;
+  color: var(--ink);
+}
+.tip-form__note {
+  margin: 8px 0 0;
+  font-size: 12px;
+  color: var(--ink-soft);
+}

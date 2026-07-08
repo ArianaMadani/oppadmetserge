@@ -500,6 +500,84 @@
   // ======================================================================
   //  TAB 2: ARTIESTDETAIL
   // ======================================================================
+  // ---- Publiekstips: live uit een Google Sheet (kolommen: artiest | tip | van) ----
+  // De Sheet is alleen-lezen gedeeld; alleen Ariana & Serge kunnen schrijven.
+  // Offline of Sheet onbereikbaar? Dan geldt de laatst opgehaalde versie uit
+  // localStorage en verbergt het blokje zich verder gewoon.
+  var PUBTIPS_SHEET_ID = "1vGmRoFAdYFOj8VZaLRX4RwkuCm4NYnZk-heCg8JFQ5U";
+  var PUBTIPS_KEY = "wildeburg-pubtips";
+  var pubTips = loadPubTips();
+  function loadPubTips() {
+    try { return JSON.parse(localStorage.getItem(PUBTIPS_KEY)) || { byName: {} }; }
+    catch (e) { return { byName: {} }; }
+  }
+  function fetchPubTips() {
+    if (!PUBTIPS_SHEET_ID) return;
+    // We lezen het reactie-tabblad van het formulier. Kolommen:
+    // A=tijdstip, B=artiest, C=tip, D=van, E=selectievakje "tonen?".
+    // Alleen aangevinkte rijen verschijnen in de app (= modereren met één tik).
+    var url = "https://docs.google.com/spreadsheets/d/" + PUBTIPS_SHEET_ID +
+      "/gviz/tq?tqx=out:json&headers=1&sheet=" + encodeURIComponent("Formulierreacties 1");
+    fetch(url).then(function (r) { return r.text(); }).then(function (txt) {
+      var m = txt.match(/setResponse\(([\s\S]*)\);?\s*$/);
+      if (!m) return;
+      var data = JSON.parse(m[1]);
+      var rows = (data.table && data.table.rows) || [];
+      var byName = {};
+      rows.forEach(function (row) {
+        var c = row.c || [];
+        var naam = c[1] && c[1].v != null ? String(c[1].v).trim() : "";
+        var tip  = c[2] && c[2].v != null ? String(c[2].v).trim() : "";
+        var van  = c[3] && c[3].v != null ? String(c[3].v).trim() : "";
+        var ok   = c[4] && (c[4].v === true || String(c[4].v).toLowerCase() === "ja");
+        if (!naam || !tip || !ok) return;
+        var key = normalize(naam);
+        (byName[key] = byName[key] || []).push({ tip: tip, van: van });
+      });
+      pubTips = { byName: byName };
+      try { localStorage.setItem(PUBTIPS_KEY, JSON.stringify(pubTips)); } catch (e) {}
+      // Kijkt de gebruiker nu naar een artiest? Vers binnengekomen tips direct tonen.
+      if (currentView === "detail") route();
+    }).catch(function () { /* offline: cache blijft gelden */ });
+  }
+  // ---- Tip insturen: schrijft (anoniem) naar het Google Formulier dat aan de
+  // Sheet hangt. Reacties komen op het aparte "Formulierreacties"-tabblad;
+  // Ariana & Serge kopiëren de leuke naar het hoofdtabblad (= moderatie).
+  var TIPFORM_ID = "1FAIpQLSfDBvwNJpXaZXzylzEqFUUP4Qpd4LLxiFvxc5EWzNhW8PbQTQ";
+  var TIPFORM_ENTRY_ARTIEST = "entry.281262833";
+  var TIPFORM_ENTRY_TIP = "entry.705090032";
+  var TIPFORM_ENTRY_VAN = "entry.27140199";
+  function sendPubTip(artiestNaam, tip, van, honing) {
+    // Honeypot gevuld? Dan is het een bot: doe alsof het lukte, verstuur niets.
+    if (honing) return Promise.resolve();
+    var body = new URLSearchParams();
+    body.append(TIPFORM_ENTRY_ARTIEST, artiestNaam);
+    body.append(TIPFORM_ENTRY_TIP, tip);
+    if (TIPFORM_ENTRY_VAN && van) body.append(TIPFORM_ENTRY_VAN, van);
+    return fetch("https://docs.google.com/forms/d/e/" + TIPFORM_ID + "/formResponse", {
+      method: "POST",
+      mode: "no-cors", // Google geeft geen leesbaar antwoord; versturen werkt wel
+      headers: { "Content-Type": "application/x-www-form-urlencoded" },
+      body: body.toString()
+    });
+  }
+
+  // Match op (begin van) artiestnaam, accent-ongevoelig: "360 soundsystem" in de
+  // Sheet vindt ook "360 Soundsystem (Patrice Bäumel & Nuno Dos Santos)".
+  function pubTipsFor(a) {
+    var an = normalize(a.name);
+    var out = [];
+    Object.keys(pubTips.byName).forEach(function (k) {
+      // Ruime match: "lammer" hoort bij "ATRIP & LAMMER", "360 soundsystem"
+      // bij de volledige lange naam. De namen komen uit jullie eigen Sheet,
+      // dus vergissingen zijn zeldzaam en zo te herstellen.
+      if (an.indexOf(k) !== -1 || k.indexOf(an) !== -1) {
+        out = out.concat(pubTips.byName[k]);
+      }
+    });
+    return out;
+  }
+
   function renderDetail(id) {
     currentView = "detail";
     var a = byId[id];
@@ -551,6 +629,32 @@
       slotsHtml = '<div class="detail__slots"><div class="slot-none">Nog niet op het blokkenschema</div></div>';
     }
 
+    var tips = pubTipsFor(a);
+    var pubHtml = tips.length
+      ? '<div class="pub-tips"><div class="pub-tips__head">Tips van het publiek</div>' +
+        tips.map(function (t) {
+          return '<div class="pub-tip">“' + escapeHtml(t.tip) + '”' +
+            (t.van ? '<span class="pub-tip__van">— ' + escapeHtml(t.van) + '</span>' : '') +
+          '</div>';
+        }).join("") + '</div>'
+      : "";
+
+    // Zelf een tip insturen (inklapbaar; gaat via het Google Formulier)
+    var tipFormHtml =
+      '<details class="tip-form"><summary>Weet jij het beter? Stuur een tip in</summary>' +
+        '<div class="tip-form__body">' +
+          '<textarea id="tipTekst" rows="3" maxlength="280" ' +
+            'placeholder="Jouw tip over ' + escapeHtml(a.name) + '…"></textarea>' +
+          '<input id="tipVan" type="text" maxlength="40" placeholder="Je naam">' +
+          '<input id="tipWeb" type="text" tabindex="-1" autocomplete="off" ' +
+            'style="position:absolute;left:-9999px" aria-hidden="true">' +
+          '<button id="tipVerstuur" type="button" class="tip-form__send">Versturen</button>' +
+          '<div id="tipFeedback" class="tip-form__feedback" hidden></div>' +
+          '<p class="tip-form__note">Serge en Ariana bekijken alle inzendingen — ' +
+            'de leukste verschijnen hier.</p>' +
+        '</div>' +
+      '</details>';
+
     var html =
       '<button class="back-btn" data-back="1">← Terug</button>' +
       '<div class="detail" style="--stage-color:' + color + '">' +
@@ -559,6 +663,8 @@
         (genresHtml ? '<div class="chips">' + genresHtml + '</div>' : '') +
         descHtml +
         slotsHtml +
+        pubHtml +
+        tipFormHtml +
         '<button class="detail__fav' + (favActive ? " is-fav" : "") + '" data-detailfav="' +
           escapeHtml(a.id) + '">' +
           '<span class="big-heart">' + heartSvg() + '</span>' +
@@ -576,6 +682,36 @@
       favBtn.classList.toggle("is-fav", now); // het SVG-hart vult zich via CSS
       favBtn.querySelector("span:last-child").textContent =
         now ? "In mijn schema" : "Voeg toe aan mijn schema";
+    });
+
+    // Tip insturen
+    var verstuurBtn = el("tipVerstuur");
+    if (verstuurBtn) verstuurBtn.addEventListener("click", function () {
+      var tekst = el("tipTekst").value.trim();
+      var van = el("tipVan").value.trim();
+      var honing = el("tipWeb").value; // honeypot: mensen zien dit veld niet
+      var fb = el("tipFeedback");
+      if (!tekst) {
+        fb.textContent = "Typ eerst je tip!";
+        fb.hidden = false;
+        return;
+      }
+      if (!van) {
+        fb.textContent = "Vul ook je naam in — Serge wil weten wie het beter weet.";
+        fb.hidden = false;
+        return;
+      }
+      verstuurBtn.disabled = true;
+      sendPubTip(a.name, tekst, van, honing).then(function () {
+        fb.textContent = "Verstuurd! Serge bekijkt 'm — wie weet sta je er zo bij.";
+        fb.hidden = false;
+        el("tipTekst").value = "";
+        el("tipVan").value = "";
+      }).catch(function () {
+        fb.textContent = "Versturen lukte niet — check je bereik en probeer nog eens.";
+        fb.hidden = false;
+        verstuurBtn.disabled = false;
+      });
     });
 
     scrollTop();
@@ -2014,4 +2150,5 @@
   // Lege hash => HOME (default). route() vangt hash === "" zelf af, dus we
   // hoeven geen default-hash te forceren.
   route();
+  fetchPubTips(); // haal publiekstips live op (doet niets zonder Sheet-id)
 })();
