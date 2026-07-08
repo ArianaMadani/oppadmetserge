@@ -454,8 +454,8 @@ const WILDEBURG_DATA = {
     { id: "milio", name: "Milio", type: "muziek", genres: ["electronica", "laidback"], tip: false,
       desc: "lager tempo, beetje trippy, hele laidback electronica. Ik vind z’n Sisyphos set wel tof",
       slots: [{ day: "zo", stage: "BUD X Lodge", start: "15:00", end: "17:00" }] },
-    { id: "360-soundsystem", name: "360 Soundsystem (Patrice Bäumel & Nuno Dos Santos)", type: "muziek", genres: ["house", "techno"], tip: false,
-      desc: null,
+    { id: "360-soundsystem", name: "360 Soundsystem (Patrice Bäumel & Nuno Dos Santos)", type: "muziek", genres: ["house", "techno", "synths"], tip: false,
+      desc: "verwacht hier warme synths, sound fx, loops en soundscapes. Interessante combi!",
       slots: [{ day: "zo", stage: "BUD X Lodge", start: "17:00", end: "21:00" }] },
 
     { id: "dana-kuehr", name: "Dana Kuehr", type: "muziek", genres: ["house", "funk", "ambient"], tip: false,
