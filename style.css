@@ -1901,3 +1901,24 @@ body {
   font-size: 12px;
   color: var(--ink-soft);
 }
+
+/* --- Terugknop zweeft linksonder (boven de tabbar), altijd binnen duimbereik --- */
+.back-btn {
+  position: fixed;
+  left: 12px;
+  bottom: calc(var(--tabbar-h) + env(safe-area-inset-bottom) + 14px);
+  z-index: 45;
+  margin: 0;
+  background: var(--sand-50);
+  color: var(--ink);
+  border: 2px solid var(--green-900);
+  border-radius: 999px;
+  padding: 10px 16px;
+  font-family: var(--font-display);
+  text-transform: uppercase;
+  letter-spacing: 0.8px;
+  font-size: 13px;
+  box-shadow: var(--stamp-sm);
+  cursor: pointer;
+}
+.back-btn:active { transform: translate(2px, 2px); box-shadow: 1px 1px 0 rgba(10, 22, 15, 0.5); }
