@@ -637,10 +637,28 @@
     return { timed: timed, untimedByDay: untimedByDay };
   }
 
+  // "Mijn blokkenschema": toon alleen favorieten in het grid.
+  var schemaFavOnly = false;
+
   function renderSchedule() {
     currentView = "schema";
 
     var data = slotsForFestival();
+    if (schemaFavOnly) {
+      data.timed = data.timed.filter(function (t) { return isFav(t.artist.id); });
+      var filteredUntimed = {};
+      Object.keys(data.untimedByDay).forEach(function (dayId) {
+        var byStage = data.untimedByDay[dayId];
+        Object.keys(byStage).forEach(function (st) {
+          var items = byStage[st].filter(function (it) { return isFav(it.artist.id); });
+          if (items.length) {
+            if (!filteredUntimed[dayId]) filteredUntimed[dayId] = {};
+            filteredUntimed[dayId][st] = items;
+          }
+        });
+      });
+      data.untimedByDay = filteredUntimed;
+    }
     var totalHours = FEST_TOTAL_HOURS;
     var gridWidth = STAGE_LABEL_WIDTH + totalHours * HOUR_WIDTH;
 
@@ -650,7 +668,16 @@
       html += '<button data-day="' + d.id + '">' +
         escapeHtml(d.label) + '<small>' + escapeHtml(d.datum) + '</small></button>';
     });
+    // Filter: alleen je favorieten in het grid ("mijn blokkenschema")
+    html += '<button id="schemaFavToggle" type="button" class="schema-fav-toggle' +
+      (schemaFavOnly ? " is-active" : "") + '" aria-pressed="' + schemaFavOnly + '">' +
+      heartSvg(schemaFavOnly ? "heart-ico--on" : "") + '<small>Alleen mijn hartjes</small></button>';
     html += '</div>';
+
+    if (schemaFavOnly && !data.timed.length) {
+      html += '<div class="schema-fav-empty">Nog geen favorieten aangevinkt — tik op het ' +
+        'hartje bij een artiest en zie hier daarna je eigen blokkenschema.</div>';
+    }
 
     // Podia met minstens één getimed blok (vaste volgorde uit data.stages)
     var stagesWithContent = DATA.stages.filter(function (st) {
@@ -782,6 +809,20 @@
     // Scroll-spy: actieve dag-knop volgt de horizontale scrollpositie.
     var sc = document.querySelector(".schedule-scroll");
     if (sc) sc.addEventListener("scroll", onScheduleScroll, { passive: true });
+
+    // Hartjes-filter: her-render met behoud van de horizontale scrollpositie.
+    var favToggle = el("schemaFavToggle");
+    if (favToggle) favToggle.addEventListener("click", function () {
+      var sc0 = document.querySelector(".schedule-scroll");
+      var x = sc0 ? sc0.scrollLeft : 0;
+      schemaFavOnly = !schemaFavOnly;
+      renderSchedule();
+      requestAnimationFrame(function () {
+        var sc1 = document.querySelector(".schedule-scroll");
+        if (sc1) { void sc1.scrollWidth; sc1.scrollLeft = x; }
+        updateDaySpy();
+      });
+    });
   }
 
   // ---- Vloeiende jump-scroll (eigen rAF-animatie, werkt overal) ----
@@ -910,6 +951,8 @@
           'WhatsApp</button>' +
         '<button class="share-btn share-btn--copy" id="shareCopyBtn" type="button">' +
           '🔗 Kopieer link</button>' +
+        '<button class="share-btn share-btn--grid" id="favGridBtn" type="button">' +
+          'Bekijk als blokkenschema</button>' +
       '</div>' +
       '<div class="share-feedback" id="shareFeedback" hidden></div>' +
       '</div>';
@@ -1002,6 +1045,13 @@
     var copyBtn = el("shareCopyBtn");
     if (copyBtn) copyBtn.addEventListener("click", function () {
       copyRouteUrl(buildRouteUrl());
+    });
+    // (4) Eigen blokkenschema: open het schema met het hartjes-filter aan.
+    var gridBtn = el("favGridBtn");
+    if (gridBtn) gridBtn.addEventListener("click", function () {
+      schemaFavOnly = true;
+      savedScroll.schema = null; // begin links (vrijdag), niet op een oude positie
+      location.hash = "schema";
     });
 
     scrollTop();

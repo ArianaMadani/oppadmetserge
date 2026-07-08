@@ -8,7 +8,7 @@
 
 // Cache-versie met datum. Bij een nieuwe versie: verhoog de datum -> oude cache
 // wordt in 'activate' opgeruimd en de nieuwe bestanden worden opnieuw gecachet.
-var CACHE = "wildeburg-v2026-07-08d";
+var CACHE = "wildeburg-v2026-07-08e";
 
 // Kern-bestanden: alles-of-niets (de app moet compleet offline werken).
 var ASSETS = [
