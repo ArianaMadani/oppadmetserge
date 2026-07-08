@@ -1668,3 +1668,110 @@ body {
   .app-header__subtitle { font-size: 14px; }
   .detail__name { font-size: 30px; }
 }
+
+/* ========================================================================
+   ZINE-SKIN — override-laag voor een eigenzinniger, minder "app-template"
+   gevoel. Geïnspireerd op Wildeburgs handgetekende zwart-wit plattegrond:
+   festivalposter-kapitalen, harde "gestempelde" schaduwen, en accenten die
+   nét niet recht staan (alsof ze met de hand geplakt zijn).
+   ======================================================================== */
+:root {
+  --font-display: "Avenir Next Condensed", "Futura-CondensedExtraBold",
+                  "Roboto Condensed", "Arial Narrow", Impact, sans-serif;
+  --stamp: 4px 4px 0 rgba(10, 22, 15, 0.5);      /* harde offset-schaduw */
+  --stamp-sm: 3px 3px 0 rgba(10, 22, 15, 0.5);
+}
+
+/* --- Header als posterkop --- */
+.app-header {
+  background: var(--green-900);
+  box-shadow: 0 3px 0 var(--coral);
+}
+.app-header__title {
+  font-family: var(--font-display);
+  text-transform: uppercase;
+  font-weight: 700;
+  font-size: 25px;
+  letter-spacing: 0.8px;
+  white-space: nowrap;
+}
+@media (max-width: 430px) { .app-header__title { font-size: 21px; letter-spacing: 0.4px; } }
+@media (max-width: 370px) { .app-header__title { font-size: 19px; } }
+.app-header__subtitle {
+  text-transform: uppercase;
+  letter-spacing: 2.5px;
+  font-size: 10.5px;
+  color: var(--gold);
+}
+
+/* --- Sectiekoppen: marker-streep, tikje scheef --- */
+.section-title {
+  font-family: var(--font-display);
+  text-transform: uppercase;
+  font-size: 19px;
+  letter-spacing: 1.2px;
+  display: inline-block;
+  transform: rotate(-1.1deg);
+  border-bottom: 3px solid var(--coral);
+  padding: 0 8px 1px 2px;
+}
+
+/* --- Kaarten: gestempeld i.p.v. zwevend --- */
+.artist-card, .detail, .home-hero, .home-now, .home-ask,
+.route-import, .myday, .stage-page__head {
+  border: 2px solid var(--green-900);
+  box-shadow: var(--stamp);
+}
+.home-hero { transform: rotate(-0.5deg); }
+.home-hero__title {
+  font-family: var(--font-display);
+  text-transform: uppercase;
+  font-size: 26px;
+  letter-spacing: 0.8px;
+  line-height: 1.05;
+}
+.detail__name, .home-now__count {
+  font-family: var(--font-display);
+  text-transform: uppercase;
+  letter-spacing: 0.6px;
+}
+
+/* --- Knoppen & chips: stevige rand, ingedrukt-effect --- */
+.home-ask__btn, .detail__fav, .share-btn, .route-import button,
+.no-time-chip, .day-btn {
+  border: 2px solid var(--green-900);
+  box-shadow: var(--stamp-sm);
+  transition: transform 0.08s ease, box-shadow 0.08s ease;
+}
+.home-ask__btn:active, .detail__fav:active, .share-btn:active, .day-btn:active {
+  transform: translate(2px, 2px);
+  box-shadow: 1px 1px 0 rgba(10, 22, 15, 0.5);
+}
+.toggle-chip, .genre-chip {
+  border: 1.5px solid rgba(251, 246, 234, 0.45);
+}
+.toggle-chip.is-active, .genre-chip.is-active {
+  border-color: var(--green-900);
+  box-shadow: var(--stamp-sm);
+}
+
+/* --- Tabbar: poster-letters --- */
+.tabbar__label {
+  font-family: var(--font-display);
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  font-size: 11px;
+}
+
+/* --- Dag-koppen (Mijn schema/podiumpagina) in dezelfde stijl --- */
+.myday__head {
+  font-family: var(--font-display);
+  text-transform: uppercase;
+  letter-spacing: 1px;
+}
+
+/* --- Zoekveld: rustiger, past bij de stempels --- */
+.searchbar input {
+  border: 2px solid var(--green-900);
+  box-shadow: var(--stamp-sm);
+}
