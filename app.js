@@ -248,6 +248,11 @@
       setActiveTab("kaart");
       return;
     }
+    if (parts[0] === "podium" && parts[1]) {
+      renderStage(parts[1]);
+      setActiveTab(null);
+      return;
+    }
     if (parts[0] === "mijn") {
       renderMySchedule();
       setActiveTab("mijn");
@@ -675,9 +680,11 @@
     // Podium-rijen
     stagesWithContent.forEach(function (st, rowIdx) {
       var rowLine = rowIdx + 3; // rij 1 = dag-band, rij 2 = tijd-as
-      html += '<div class="stage-label" style="grid-row:' + rowLine + ';grid-column:1;' +
+      html += '<a class="stage-label stage-label--link" href="#podium/' + stageSlug(st) +
+        '" style="grid-row:' + rowLine + ';grid-column:1;' +
         '--stage-color:' + stageColor(st) + '">' +
-        '<span class="stage-label__swatch"></span>' + escapeHtml(st) + '</div>';
+        '<span class="stage-label__swatch"></span>' +
+        '<span class="stage-label__txt">' + escapeHtml(st) + '</span></a>';
 
       html += '<div class="stage-row-bg" style="grid-row:' + rowLine +
         ';grid-column:2 / span ' + totalHours + ';position:relative;">';
@@ -882,10 +889,18 @@
 
     var html = '';
 
-    // Deel-knop bovenaan (er is hier altijd ≥ 1 favoriet).
+    // Deel-knoppen bovenaan (er is hier altijd ≥ 1 favoriet). Op een laptop
+    // toont navigator.share weinig opties, dus ook WhatsApp + kopieer-link.
     html += '<div class="share-row">' +
-      '<button class="share-btn" id="shareRouteBtn" type="button">' +
-        '📤 Dit is mijn route — deel ’m!</button>' +
+      '<div class="share-intro">Dit is jouw route — deel ’m met je vrienden!</div>' +
+      '<div class="share-btns">' +
+        '<button class="share-btn share-btn--native" id="shareNativeBtn" type="button" hidden>' +
+          '📤 Deel</button>' +
+        '<button class="share-btn share-btn--wa" id="shareWaBtn" type="button">' +
+          'WhatsApp</button>' +
+        '<button class="share-btn share-btn--copy" id="shareCopyBtn" type="button">' +
+          '🔗 Kopieer link</button>' +
+      '</div>' +
       '<div class="share-feedback" id="shareFeedback" hidden></div>' +
       '</div>';
 
@@ -961,8 +976,23 @@
       });
     });
 
-    var shareBtn = el("shareRouteBtn");
-    if (shareBtn) shareBtn.addEventListener("click", shareRoute);
+    // (1) Deel — alleen tonen als navigator.share bestaat (anders verborgen).
+    var nativeBtn = el("shareNativeBtn");
+    if (nativeBtn && navigator.share) {
+      nativeBtn.hidden = false;
+      nativeBtn.addEventListener("click", shareRoute);
+    }
+    // (2) WhatsApp — opent wa.me met de ge-encodeerde route-tekst (nieuw tabblad).
+    var waBtn = el("shareWaBtn");
+    if (waBtn) waBtn.addEventListener("click", function () {
+      var text = "Dit is mijn Wildeburg-route! " + buildRouteUrl();
+      window.open("https://wa.me/?text=" + encodeURIComponent(text), "_blank");
+    });
+    // (3) Kopieer link — clipboard met zichtbare feedback.
+    var copyBtn = el("shareCopyBtn");
+    if (copyBtn) copyBtn.addEventListener("click", function () {
+      copyRouteUrl(buildRouteUrl());
+    });
 
     scrollTop();
   }
@@ -1003,7 +1033,7 @@
   }
 
   function copyRouteUrl(url) {
-    var COPIED = "Link gekopieerd! Plak ’m in je groepsapp 💚";
+    var COPIED = "Gekopieerd! Plak ’m in je groepsapp";
     if (navigator.clipboard && navigator.clipboard.writeText) {
       navigator.clipboard.writeText(url).then(function () {
         showShareFeedback(COPIED);
@@ -1024,7 +1054,7 @@
     if (navigator.share) {
       navigator.share({
         title: "Op pad met Serge — mijn Wildeburg-route",
-        text: "Dit is mijn Wildeburg-route! 🌲",
+        text: "Dit is mijn Wildeburg-route!",
         url: url
       }).catch(function (err) {
         // Geannuleerd door de gebruiker = prima; anders alsnog kopiëren.
@@ -1155,13 +1185,13 @@
       var dayDiff = Math.round((FEST_DAY_MID - todayMid) / 86400000);
       var msg;
       if (dayDiff >= 2) {
-        msg = "Nog " + dayDiff + " nachtjes slapen 🌲";
+        msg = "Nog " + dayDiff + " nachtjes slapen";
       } else if (dayDiff === 1) {
-        msg = "Morgen begint het!! 🌲";
+        msg = "Morgen begint het!!";
       } else {
         // Vrijdag 10 juli, vóór 12:00
         var uren = Math.max(1, Math.ceil((FEST_START_TS - now) / 3600000));
-        msg = "Vandaag!! Nog " + uren + " uur… 🌲";
+        msg = "Vandaag!! Nog " + uren + " uur…";
       }
       return '<div class="home-now__count">' + escapeHtml(msg) + '</div>' +
              '<div class="home-now__sub">Wildeburg 2026 · 10–12 juli · Kraggenburg</div>';
@@ -1169,7 +1199,7 @@
 
     // ---- NA het festival ----
     if (now > FEST_END_TS) {
-      return '<div class="home-now__count">Dat was Wildeburg 2026 — tot volgend jaar! 🌲</div>';
+      return '<div class="home-now__count">Dat was Wildeburg 2026 — tot volgend jaar!</div>';
     }
 
     // ---- TIJDENS het festival: per podium de act die NU speelt ----
@@ -1202,9 +1232,123 @@
     });
 
     if (!rows) {
-      return '<div class="home-now__sub">Even geen live programma — kijk zo weer! 🌲</div>';
+      return '<div class="home-now__sub">Even geen live programma — kijk zo weer!</div>';
     }
     return '<div class="home-now__list">' + rows + '</div>';
+  }
+
+  // ---- "Vraag het Serge": kies een aanbeveling -------------------------
+  // Sluit hutjes zonder muzikaal programma uit + acts zonder notitie.
+  var SERGE_EXCLUDE_TYPES = { host: true, overig: true, theater: true };
+  function sergeEligible(a) {
+    return a && !SERGE_EXCLUDE_TYPES[a.type] &&
+      a.desc != null && String(a.desc).trim() !== "";
+  }
+
+  // Getimede slots die NU spelen of binnen 2 uur beginnen (globaal uur).
+  function sergeFestivalCandidates(globalNow) {
+    var out = [];
+    slotsForFestival().timed.forEach(function (t) {
+      if (!sergeEligible(t.artist)) return;
+      var playingNow = t.gStart <= globalNow && globalNow < t.gEnd;
+      var soon = t.gStart >= globalNow && t.gStart <= globalNow + 2;
+      if (playingNow || soon) out.push(t);
+    });
+    return out;
+  }
+  function sergePickFrom(arr) {
+    return arr[Math.floor(Math.random() * arr.length)];
+  }
+  // Levert { mode:"festival"|"listen", artist, slot } of null.
+  // excludeId zorgt dat "Doe nog een gok" nooit direct dezelfde teruggeeft.
+  function pickSergeSuggestion(excludeId) {
+    var now = new Date();
+    var during = now >= FEST_START_TS && now <= FEST_END_TS;
+    if (during) {
+      var globalNow = (now - FEST_START_TS) / 3600000;
+      var cands = sergeFestivalCandidates(globalNow);
+      var notSame = cands.filter(function (t) { return t.artist.id !== excludeId; });
+      var pool = notSame.length ? notSame : cands;
+      if (pool.length) {
+        // Voorkeur voor tip-acts (met desc).
+        var tips = pool.filter(function (t) { return t.artist.tip; });
+        var t = sergePickFrom(tips.length ? tips : pool);
+        return { mode: "festival", artist: t.artist, slot: t.slot };
+      }
+      // Geen live kandidaten in het venster (bv. nachtgat) -> luistertip.
+    }
+    // Buiten festivaltijd (of geen live kandidaten): willekeurige tip-act.
+    var listenPool = DATA.artists.filter(function (a) {
+      return sergeEligible(a) && a.tip;
+    });
+    var notSameL = listenPool.filter(function (a) { return a.id !== excludeId; });
+    var lp = notSameL.length ? notSameL : listenPool;
+    if (!lp.length) return null;
+    var a = sergePickFrom(lp);
+    var firstTimed = (a.slots || []).filter(function (s) { return s.start != null; })[0];
+    var slot = firstTimed || (a.slots || [])[0] || null;
+    return { mode: "listen", artist: a, slot: slot };
+  }
+
+  // Dag + tijd + podium voor "wanneer speelt hij" (luistertip).
+  function sergeWhen(slot) {
+    if (!slot) return "Nog niet op het blokkenschema";
+    var tijd = (slot.start && slot.end) ? (slot.start + "–" + slot.end) : "tijd nog onbekend";
+    return capFirst(dayText(slot)) + " · " + tijd + " · " + slot.stage;
+  }
+
+  // Bouw de aanbeveling-HTML (zonder de "Doe nog een gok"-knop).
+  function buildSergeRec(sugg) {
+    var a = sugg.artist;
+    var star = a.tip ? ' <span class="home-ask__star" title="Tip van Serge">★</span>' : '';
+    var quote = '<div class="home-ask__quote">' +
+      '<span class="home-ask__says">Serge zegt:</span> ' +
+      '<em>“' + escapeHtml(a.desc) + '”</em></div>';
+
+    if (sugg.mode === "festival") {
+      var s = sugg.slot;
+      var tijd = (s.start && s.end) ? (s.start + "–" + s.end) : "tijd nog onbekend";
+      return '<div class="home-ask__rec">' +
+        '<div class="home-ask__line">' +
+          '<a class="home-ask__name" href="#artiest/' + escapeHtml(a.id) + '">' +
+            escapeHtml(a.name) + star + '</a>' +
+        '</div>' +
+        '<div class="home-ask__meta">' + escapeHtml(tijd) + ' · ' +
+          '<a class="home-ask__stage" href="#kaart/' + stageSlug(s.stage) + '">📍 ' +
+          escapeHtml(s.stage) + '</a></div>' +
+        quote +
+      '</div>';
+    }
+    // Luistertip
+    return '<div class="home-ask__rec">' +
+      '<p class="home-ask__lead">Alvast in de stemming komen? Serge raadt ' +
+        '<a class="home-ask__name" href="#artiest/' + escapeHtml(a.id) + '">' +
+        escapeHtml(a.name) + '</a> aan:</p>' +
+      quote +
+      '<p class="home-ask__when">Speelt: ' + escapeHtml(sergeWhen(sugg.slot)) + '</p>' +
+    '</div>';
+  }
+
+  var lastSergeId = null;
+  function showSergeSuggestion() {
+    var box = el("homeAskResult");
+    if (!box) return;
+    var sugg = pickSergeSuggestion(lastSergeId);
+    var intro = el("homeAskIntro");
+    if (!sugg) {
+      box.innerHTML = '<div class="home-ask__rec"><p class="home-ask__lead">' +
+        'Serge is even sprakeloos — probeer het zo nog eens!</p></div>';
+      box.hidden = false;
+      if (intro) intro.hidden = true;
+      return;
+    }
+    lastSergeId = sugg.artist.id;
+    box.innerHTML = buildSergeRec(sugg) +
+      '<button class="home-ask__again" type="button" id="askSergeAgain">Doe nog een gok</button>';
+    box.hidden = false;
+    if (intro) intro.hidden = true;
+    var again = el("askSergeAgain");
+    if (again) again.addEventListener("click", showSergeSuggestion);
   }
 
   function renderHome() {
@@ -1226,7 +1370,7 @@
     var html =
       '<section class="home">' +
         '<div class="home-hero">' +
-          '<h2 class="home-hero__title">Welkom! 🌲</h2>' +
+          '<h2 class="home-hero__title">Welkom!</h2>' +
           '<p class="home-hero__intro">Alle artiesten van Wildeburg 2026, het complete ' +
           'blokkenschema en de ongezouten mening van Serge bij (bijna) elke act.</p>' +
         '</div>' +
@@ -1234,6 +1378,17 @@
         '<div class="home-block">' +
           '<div class="section-title">Nu op Wildeburg</div>' +
           '<div id="homeNow" class="home-now">' + buildNowHtml() + '</div>' +
+        '</div>' +
+
+        '<div class="home-block">' +
+          '<div class="section-title">Vraag het Serge</div>' +
+          '<div class="home-ask" id="homeAsk">' +
+            '<div class="home-ask__intro" id="homeAskIntro">' +
+              '<p class="home-ask__q">Help, ik weet niet waar ik heen moet!</p>' +
+              '<button class="home-ask__btn" id="askSergeBtn" type="button">Vraag het Serge</button>' +
+            '</div>' +
+            '<div class="home-ask__result" id="homeAskResult" hidden></div>' +
+          '</div>' +
         '</div>' +
 
         '<div class="home-stats">' +
@@ -1248,15 +1403,17 @@
             '<span class="home-stat__label">jouw favorieten</span></a>' +
         '</div>' +
 
-        '<div class="home-serge" id="overSerge">' +
-          '<div class="section-title">Over Serge</div>' +
-          '<figure class="home-serge__figure" id="sergeFigure">' +
-            '<img class="home-serge__img" src="./serge.jpg" alt="Serge achter de knopjes">' +
-            '<figcaption class="home-serge__caption">Serge in het wild, in z\'n ' +
-            'natuurlijke habitat (achter de knopjes).</figcaption>' +
-          '</figure>' +
-          '<div class="home-serge__text">' + sergeText + '</div>' +
-        '</div>' +
+        '<details class="home-serge" id="overSerge">' +
+          '<summary class="home-serge__summary">Wie is Serge eigenlijk?</summary>' +
+          '<div class="home-serge__panel">' +
+            '<figure class="home-serge__figure" id="sergeFigure">' +
+              '<img class="home-serge__img" src="./serge.jpg" alt="Serge achter de knopjes">' +
+              '<figcaption class="home-serge__caption">Serge in het wild, in z\'n ' +
+              'natuurlijke habitat (achter de knopjes).</figcaption>' +
+            '</figure>' +
+            '<div class="home-serge__text">' + sergeText + '</div>' +
+          '</div>' +
+        '</details>' +
       '</section>';
 
     el("view").innerHTML = html;
@@ -1267,6 +1424,11 @@
       searchState.tipOnly = true;
       location.hash = "artiesten";
     });
+
+    // "Vraag het Serge": eerste klik toont een aanbeveling in dezelfde kaart.
+    lastSergeId = null;
+    var askBtn = el("askSergeBtn");
+    if (askBtn) askBtn.addEventListener("click", showSergeSuggestion);
 
     // Foto-blok netjes verbergen als serge.jpg (nog) niet bestaat.
     var sergeImg = document.querySelector("#sergeFigure .home-serge__img");
@@ -1314,9 +1476,15 @@
         (t.artist.tip ? '★ ' : '') + escapeHtml(t.artist.name) + '</a>';
     }
 
+    // Link naar de volledige podiumpagina (onder de nu/straks-regels).
+    function stageAllLink() {
+      return '<a class="mk-pop__all" href="#podium/' + stageSlug(stage) + '">' +
+        'Alle acts op dit podium →</a>';
+    }
+
     if (now > FEST_END_TS) {
       html += '<div class="mk-pop__line">Wildeburg is voorbij 🌲</div>';
-      return html;
+      return html + stageAllLink();
     }
     if (now < FEST_START_TS) {
       var first = stageNowNext(stage, -1).first; // -1 => geen current; first = eerste act
@@ -1327,7 +1495,7 @@
       } else {
         html += '<div class="mk-pop__line">Nog geen programma bekend.</div>';
       }
-      return html;
+      return html + stageAllLink();
     }
 
     // Tijdens het festival
@@ -1344,7 +1512,7 @@
     if (!nn.current && !nn.next) {
       html += '<div class="mk-pop__line">Geen act meer op dit podium.</div>';
     }
-    return html;
+    return html + stageAllLink();
   }
 
   function openMapPopup(stage, infoName) {
@@ -1369,8 +1537,8 @@
     });
     // Klik binnen de popup mag niet "buiten-sluiten" triggeren.
     pop.addEventListener("click", function (e) { e.stopPropagation(); });
-    // Na navigeren via een act-link de popup opruimen.
-    pop.querySelectorAll(".mk-pop__act").forEach(function (a) {
+    // Na navigeren via een act-link of de podiumpagina-link de popup opruimen.
+    pop.querySelectorAll(".mk-pop__act, .mk-pop__all").forEach(function (a) {
       a.addEventListener("click", function () { closeMapPopup(); });
     });
   }
@@ -1480,6 +1648,127 @@
         setTimeout(function () { centerMapMarker(target); }, 300);
       }
     }
+  }
+
+  // ======================================================================
+  //  PODIUMPAGINA (#podium/<slug>) — alle sets op één podium, chronologisch
+  // ======================================================================
+  function stageSetRow(a, s, color) {
+    var fav = isFav(a.id);
+    var heart = fav ? "❤️" : "🤍";
+    var extras = "";
+    if (s.live) extras += '<span class="tag-live">LIVE</span>';
+    if (s.label) extras += '<span class="tag-label">' + escapeHtml(s.label) + '</span>';
+    return '<div class="stage-set' + (fav ? " is-fav" : "") + '" data-artist="' +
+      escapeHtml(a.id) + '" style="--stage-color:' + color + '">' +
+      '<div class="stage-set__time">' + escapeHtml(s.start + "–" + s.end) +
+        (isNight(s) ? '<br><small class="muted">’s nachts</small>' : '') + '</div>' +
+      '<div class="stage-set__body">' +
+        '<div class="stage-set__name">' + escapeHtml(a.name) +
+          (a.tip ? '<span class="tip-badge">★</span>' : '') + extras + '</div>' +
+      '</div>' +
+      '<button class="stage-set__heart" data-fav="' + escapeHtml(a.id) +
+        '" aria-label="Favoriet aan/uit">' + heart + '</button>' +
+    '</div>';
+  }
+
+  function renderStage(slug) {
+    currentView = "podium";
+    var stage = SLUG_STAGE[slug];
+    if (!stage) {
+      el("view").innerHTML =
+        '<button class="back-btn" data-back="1">← Terug</button>' +
+        '<div class="no-results">Podium niet gevonden.</div>';
+      bindBack();
+      scrollTop();
+      return;
+    }
+    var color = stageColor(stage);
+
+    // Verzamel alle sets op dit podium, gescheiden in getimed / zonder tijd.
+    var perDay = {}, untimedPerDay = {};
+    DAY_ORDER.forEach(function (d) { perDay[d] = []; untimedPerDay[d] = []; });
+    DATA.artists.forEach(function (a) {
+      (a.slots || []).forEach(function (s) {
+        if (s.stage !== stage) return;
+        if (!perDay[s.day]) { perDay[s.day] = []; untimedPerDay[s.day] = []; }
+        if (s.start != null && s.end != null) {
+          perDay[s.day].push({ artist: a, slot: s, abs: absHour(s.start) });
+        } else {
+          untimedPerDay[s.day].push({ artist: a, slot: s });
+        }
+      });
+    });
+
+    var html =
+      '<button class="back-btn" data-back="1">← Terug</button>' +
+      '<div class="stage-page" style="--stage-color:' + color + '">' +
+        '<div class="stage-page__head">' +
+          '<h1 class="stage-page__name">' + escapeHtml(stage) + '</h1>' +
+          '<a class="stage-page__maplink" href="#kaart/' + slug + '">📍 Op de kaart</a>' +
+        '</div>';
+
+    var any = false;
+    DAY_ORDER.forEach(function (dayId) {
+      var items = perDay[dayId] || [];
+      var untimed = untimedPerDay[dayId] || [];
+      if (!items.length && !untimed.length) return;
+      any = true;
+      items.sort(function (x, y) { return x.abs - y.abs; });
+      var day = dayById[dayId];
+      html += '<div class="stage-day">' +
+        '<div class="stage-day__head">' +
+          escapeHtml((day ? day.label + ' · ' + day.datum : dayId)) + '</div>' +
+        '<div class="stage-day__list">';
+      items.forEach(function (item) {
+        html += stageSetRow(item.artist, item.slot, color);
+      });
+      html += '</div>';
+      if (untimed.length) {
+        html += '<div class="no-time-chips stage-day__chips">';
+        untimed.forEach(function (item) {
+          var fav = isFav(item.artist.id);
+          html += '<button class="no-time-chip' + (fav ? " is-fav" : "") + '" ' +
+            'data-artist="' + escapeHtml(item.artist.id) + '">' +
+            (item.artist.tip ? "★ " : "") + escapeHtml(item.artist.name) + '</button>';
+        });
+        html += '</div>';
+      }
+      html += '</div>';
+    });
+    if (!any) html += '<div class="no-results">Nog geen programma op dit podium.</div>';
+    html += '</div>';
+
+    el("view").innerHTML = html;
+    bindBack();
+
+    // Rij klikbaar -> artiestdetail (behalve een klik op het hartje).
+    document.querySelectorAll(".stage-set[data-artist]").forEach(function (row) {
+      row.addEventListener("click", function (e) {
+        if (e.target.closest("[data-fav]")) return;
+        location.hash = "artiest/" + row.getAttribute("data-artist");
+      });
+    });
+    // Chips (sets zonder tijd) navigeren gewoon door.
+    document.querySelectorAll(".stage-day__chips [data-artist]").forEach(function (b) {
+      b.addEventListener("click", function () {
+        location.hash = "artiest/" + b.getAttribute("data-artist");
+      });
+    });
+    // Hartje togglen zonder door te navigeren.
+    document.querySelectorAll(".stage-set [data-fav]").forEach(function (btn) {
+      btn.addEventListener("click", function (e) {
+        e.stopPropagation();
+        var id = btn.getAttribute("data-fav");
+        toggleFav(id);
+        var nowFav = isFav(id);
+        btn.textContent = nowFav ? "❤️" : "🤍";
+        var row = btn.closest(".stage-set");
+        if (row) row.classList.toggle("is-fav", nowFav);
+      });
+    });
+
+    scrollTop();
   }
 
   // ---- Start ----

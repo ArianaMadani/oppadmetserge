@@ -76,9 +76,14 @@ body {
 .app-header__inner { max-width: 900px; margin: 0 auto; }
 .app-header__title {
   margin: 0;
-  font-size: 22px;
+  font-size: 20px;
   font-weight: 800;
   letter-spacing: 0.2px;
+  line-height: 1.2;
+}
+/* Iets kleiner op smalle toestellen zodat de langere titel netjes wrapt */
+@media (max-width: 380px) {
+  .app-header__title { font-size: 18px; }
 }
 .app-header__subtitle {
   margin: 2px 0 0;
@@ -571,6 +576,28 @@ body {
   margin-right: 8px;
   background: var(--stage-color, var(--green-600));
 }
+/* Klikbaar podium-label -> podiumpagina (onderstreept + pijltje bij hover) */
+.stage-label--link {
+  color: #fff;
+  text-decoration: none;
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+}
+.stage-label__txt {
+  text-decoration: underline;
+  text-decoration-color: rgba(255, 255, 255, 0.35);
+  text-underline-offset: 2px;
+}
+.stage-label--link::after {
+  content: "›";
+  margin-left: 4px;
+  color: var(--sand-300);
+  font-weight: 800;
+}
+@media (hover: hover) {
+  .stage-label--link:hover { background: var(--green-800); }
+  .stage-label--link:hover .stage-label__txt { text-decoration-color: var(--coral); }
+}
 
 .stage-row-bg {
   border-top: 1px solid rgba(255,255,255,0.06);
@@ -898,8 +925,138 @@ body {
   outline-offset: 2px;
 }
 
-/* Over Serge */
-.home-serge { margin-top: 10px; }
+/* Vraag het Serge */
+.home-ask {
+  background: var(--sand-50);
+  border-radius: var(--radius);
+  padding: 14px 16px 16px;
+  box-shadow: var(--shadow);
+  border-left: 6px solid var(--coral);
+}
+.home-ask__q {
+  margin: 0 0 10px;
+  font-size: 16px;
+  font-weight: 800;
+  color: var(--green-800);
+  line-height: 1.3;
+}
+.home-ask__btn,
+.home-ask__again {
+  border: none;
+  cursor: pointer;
+  font-family: inherit;
+  font-size: 15px;
+  font-weight: 700;
+  padding: 12px 16px;
+  border-radius: var(--radius);
+  background: var(--coral);
+  color: #fff;
+  box-shadow: var(--shadow);
+  transition: transform 0.08s ease, background-color 0.15s ease;
+}
+.home-ask__btn:active,
+.home-ask__again:active { transform: scale(0.98); }
+@media (hover: hover) {
+  .home-ask__btn:hover,
+  .home-ask__again:hover { background: var(--coral-dark); }
+}
+.home-ask__again {
+  margin-top: 12px;
+  background: var(--green-700);
+  font-size: 14px;
+  padding: 10px 15px;
+}
+@media (hover: hover) {
+  .home-ask__again:hover { background: var(--green-600); }
+}
+.home-ask__rec {
+  border-top: 1px solid rgba(20, 43, 30, 0.1);
+  padding-top: 12px;
+}
+.home-ask__line { margin-bottom: 2px; }
+.home-ask__name {
+  font-size: 17px;
+  font-weight: 800;
+  color: var(--green-800);
+  text-decoration: none;
+}
+.home-ask__name:active { opacity: 0.7; }
+.home-ask__star { color: var(--gold); font-size: 14px; }
+.home-ask__meta {
+  font-size: 13px;
+  color: var(--ink-soft);
+  margin-bottom: 8px;
+}
+.home-ask__stage {
+  color: var(--ink-soft);
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+.home-ask__lead {
+  margin: 0 0 8px;
+  font-size: 14.5px;
+  line-height: 1.5;
+  color: var(--ink);
+}
+.home-ask__quote {
+  font-size: 14.5px;
+  line-height: 1.55;
+  color: var(--ink);
+  background: var(--sand-100);
+  border-radius: var(--radius-sm);
+  padding: 10px 12px;
+}
+.home-ask__says {
+  display: block;
+  font-size: 12px;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.4px;
+  color: var(--coral-dark);
+  margin-bottom: 2px;
+}
+.home-ask__when {
+  margin: 8px 0 0;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--ink-soft);
+}
+
+/* Over Serge — inklapbare accordion onderaan home */
+.home-serge {
+  margin-top: 14px;
+  background: var(--sand-50);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow);
+  border-left: 6px solid var(--coral);
+  overflow: hidden;
+}
+.home-serge__summary {
+  list-style: none;
+  cursor: pointer;
+  padding: 14px 16px;
+  font-size: 15.5px;
+  font-weight: 800;
+  color: var(--green-800);
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  -webkit-tap-highlight-color: transparent;
+}
+.home-serge__summary::-webkit-details-marker { display: none; }
+/* Eigen pijltje dat meedraait bij open/dicht */
+.home-serge__summary::after {
+  content: "▾";
+  margin-left: auto;
+  font-size: 14px;
+  color: var(--coral);
+  transition: transform 0.2s ease;
+}
+.home-serge[open] .home-serge__summary::after { transform: rotate(180deg); }
+@media (hover: hover) {
+  .home-serge__summary:hover { color: var(--coral-dark); }
+}
+.home-serge__panel { padding: 0 16px 14px; }
 .home-serge__figure {
   margin: 0 0 12px;
   text-align: center;
@@ -907,23 +1064,17 @@ body {
 .home-serge__img {
   display: block;
   width: 100%;
-  max-width: 420px;
+  max-width: 240px;
   margin: 0 auto;
   border-radius: var(--radius);
   box-shadow: var(--shadow-lg);
 }
 .home-serge__caption {
   margin: 8px auto 0;
-  max-width: 420px;
+  max-width: 240px;
   font-size: 12.5px;
   font-style: italic;
-  color: var(--sand-300);
-}
-.home-serge__text {
-  background: var(--sand-50);
-  border-radius: var(--radius);
-  padding: 16px 16px 6px;
-  box-shadow: var(--shadow);
+  color: var(--ink-soft);
 }
 .home-serge__text p {
   margin: 0 0 12px;
@@ -931,6 +1082,7 @@ body {
   line-height: 1.55;
   color: var(--ink);
 }
+.home-serge__text p:last-child { margin-bottom: 0; }
 
 /* ---------- Kaart ---------- */
 .map-wrap {
@@ -1113,6 +1265,116 @@ body {
   cursor: pointer;
 }
 
+/* "Alle acts op dit podium →" in de kaart-popup */
+.mk-pop__all {
+  display: inline-block;
+  margin-top: 10px;
+  font-size: 13.5px;
+  font-weight: 700;
+  color: var(--coral-dark);
+  text-decoration: none;
+}
+.mk-pop__all:active { opacity: 0.7; }
+
+/* ---------- Podiumpagina (#podium/<slug>) ---------- */
+.stage-page {
+  background: var(--sand-50);
+  border-radius: var(--radius);
+  padding: 16px 16px 20px;
+  box-shadow: var(--shadow-lg);
+  border-top: 8px solid var(--stage-color, var(--green-600));
+}
+.stage-page__head {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+  margin-bottom: 6px;
+}
+.stage-page__name {
+  font-size: 24px;
+  font-weight: 800;
+  margin: 0;
+  color: var(--green-800);
+  line-height: 1.15;
+  border-left: 6px solid var(--stage-color, var(--green-600));
+  padding-left: 10px;
+}
+.stage-page__maplink {
+  margin-left: auto;
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--sand-50);
+  background: var(--green-700);
+  padding: 8px 13px;
+  border-radius: 999px;
+  text-decoration: none;
+  box-shadow: var(--shadow);
+}
+.stage-page__maplink:active { transform: scale(0.97); }
+
+.stage-day { margin-top: 16px; }
+.stage-day__head {
+  font-size: 15px;
+  font-weight: 800;
+  color: var(--green-800);
+  margin: 0 2px 9px;
+  padding-bottom: 6px;
+  border-bottom: 1px solid rgba(20, 43, 30, 0.12);
+}
+.stage-day__list {
+  display: flex;
+  flex-direction: column;
+  gap: 9px;
+}
+.stage-set {
+  display: flex;
+  gap: 12px;
+  align-items: flex-start;
+  background: var(--sand-100);
+  border-radius: var(--radius-sm);
+  padding: 11px 12px;
+  border-left: 6px solid var(--stage-color, var(--green-600));
+  cursor: pointer;
+  transition: transform 0.08s ease;
+}
+.stage-set:active { transform: scale(0.99); }
+.stage-set.is-fav {
+  outline: 2px solid var(--coral);
+  outline-offset: -2px;
+}
+.stage-set__time {
+  font-weight: 800;
+  color: var(--green-800);
+  font-size: 14px;
+  min-width: 92px;
+  white-space: nowrap;
+}
+.stage-set__body { flex: 1; min-width: 0; }
+.stage-set__name {
+  font-weight: 700;
+  font-size: 15px;
+  color: var(--ink);
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+.stage-set__heart {
+  align-self: center;
+  border: none;
+  background: none;
+  cursor: pointer;
+  padding: 4px;
+  line-height: 1;
+  font-size: 20px;
+  border-radius: 50%;
+  -webkit-tap-highlight-color: transparent;
+  transition: transform 0.12s;
+}
+.stage-set__heart:active { transform: scale(1.25); }
+.stage-day__chips { margin-top: 9px; }
+
 /* ---------- Route delen & importeren ---------- */
 .share-row { margin: 2px 0 16px; }
 .share-btn {
@@ -1152,6 +1414,36 @@ body {
   padding: 9px 12px;
   box-shadow: var(--shadow);
   word-break: break-word;
+}
+
+/* Drie deelknoppen naast elkaar (Deel / WhatsApp / Kopieer link) */
+.share-intro {
+  color: var(--sand-100);
+  font-size: 14px;
+  font-weight: 600;
+  margin: 0 4px 10px;
+}
+.share-btns {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+.share-btns .share-btn {
+  flex: 1 1 0;
+  min-width: 110px;
+  font-size: 14px;
+  padding: 13px 10px;
+}
+/* display:flex op .share-btn overschrijft het hidden-attribuut anders, waardoor
+   de "Deel"-knop zonder navigator.share toch zichtbaar zou blijven. */
+.share-btn[hidden] { display: none; }
+.share-btn--wa { background: #25d366; color: #063d1c; }
+@media (hover: hover) {
+  .share-btn--wa:hover { background: #1fb757; }
+}
+.share-btn--copy { background: var(--green-700); }
+@media (hover: hover) {
+  .share-btn--copy:hover { background: var(--green-600); }
 }
 
 /* Import-kaartje (ontvangen route-link) */
