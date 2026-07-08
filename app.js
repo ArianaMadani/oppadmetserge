@@ -90,6 +90,17 @@
       .replace(/[\u0300-\u036f]/g, "");
   }
 
+  // ---- Hart-icoon (zelfde SVG als in de tabbar) ----
+  // Outline in gedempte kleur; gevuld koraal via CSS zodra een ouder-element
+  // .is-fav heeft. extra = extra class, bv. "heart-ico--on" voor altijd-gevuld.
+  function heartSvg(extra) {
+    return '<svg class="heart-ico' + (extra ? " " + extra : "") + '" ' +
+      'viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" ' +
+      'stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">' +
+      '<path d="M20.8 5.1a5.4 5.4 0 0 0-7.7 0l-1.1 1.1-1.1-1.1a5.4 5.4 0 1 0-7.7 ' +
+      '7.7l1.1 1.1L12 21l7.7-7.1 1.1-1.1a5.4 5.4 0 0 0 0-7.7z"/></svg>';
+  }
+
   // ---- App-state ----
   var currentView = "home"; // welke tab/scherm actief is (voor gerichte re-renders)
 
@@ -367,7 +378,7 @@
             '<button class="toggle-chip' + (searchState.tipOnly ? " is-active" : "") +
               '" data-toggle="tip">★ Alleen tips</button>' +
             '<button class="toggle-chip' + (searchState.favOnly ? " is-active" : "") +
-              '" data-toggle="fav">❤️ Alleen favorieten</button>' +
+              '" data-toggle="fav">' + heartSvg() + ' Alleen favorieten</button>' +
             '</div>';
 
     // Genre-filters
@@ -402,7 +413,6 @@
   function artistCard(a) {
     var color = a.slots && a.slots.length ? stageColor(a.slots[0].stage) : "#326049";
     var favClass = isFav(a.id) ? " is-fav" : "";
-    var heart = isFav(a.id) ? "❤️" : "🤍";
 
     var genresHtml = (a.genres || []).slice(0, 6).map(function (g) {
       return '<span class="mini-chip">' + escapeHtml(g) + '</span>';
@@ -412,7 +422,7 @@
       '<div class="artist-card" data-artist="' + escapeHtml(a.id) + '" ' +
         'style="--stage-color:' + color + '">' +
         '<button class="fav-btn' + favClass + '" data-fav="' + escapeHtml(a.id) + '" ' +
-          'aria-label="Favoriet aan/uit">' + heart + '</button>' +
+          'aria-label="Favoriet aan/uit">' + heartSvg() + '</button>' +
         '<div class="artist-card__name">' +
           escapeHtml(a.name) +
           (a.tip ? '<span class="tip-badge" title="Tip van Serge">★</span>' : '') +
@@ -476,10 +486,9 @@
         e.stopPropagation();
         var id = btn.getAttribute("data-fav");
         toggleFav(id);
-        // Visuele update ter plekke
+        // Visuele update ter plekke (het SVG-hart kleurt/vult via .is-fav)
         var nowFav = isFav(id);
         btn.classList.toggle("is-fav", nowFav);
-        btn.textContent = nowFav ? "❤️" : "🤍";
         // Als "alleen favorieten" aan staat, kan de kaart weg moeten
         if (searchState.favOnly && !nowFav && currentView === "artiesten") {
           renderArtists();
@@ -552,7 +561,7 @@
         slotsHtml +
         '<button class="detail__fav' + (favActive ? " is-fav" : "") + '" data-detailfav="' +
           escapeHtml(a.id) + '">' +
-          '<span class="big-heart">' + (favActive ? "❤️" : "🤍") + '</span>' +
+          '<span class="big-heart">' + heartSvg() + '</span>' +
           '<span>' + (favActive ? "In mijn schema" : "Voeg toe aan mijn schema") + '</span>' +
         '</button>' +
       '</div>';
@@ -564,8 +573,7 @@
     favBtn.addEventListener("click", function () {
       toggleFav(a.id);
       var now = isFav(a.id);
-      favBtn.classList.toggle("is-fav", now);
-      favBtn.querySelector(".big-heart").textContent = now ? "❤️" : "🤍";
+      favBtn.classList.toggle("is-fav", now); // het SVG-hart vult zich via CSS
       favBtn.querySelector("span:last-child").textContent =
         now ? "In mijn schema" : "Voeg toe aan mijn schema";
     });
@@ -703,7 +711,7 @@
             'background:' + stageColor(st) + '">' +
             '<span class="sched-block__name">' + escapeHtml(t.artist.name) + '</span>' +
             '<span class="sched-block__time">' + escapeHtml(t.slot.start + "–" + t.slot.end) + '</span>' +
-            (fav ? '<span class="fav-corner">❤️</span>' : '') +
+            (fav ? '<span class="fav-corner">' + heartSvg("heart-ico--on") + '</span>' : '') +
           '</button>';
         });
 
@@ -721,7 +729,8 @@
 
     html += '<p class="schedule-hint">Sleep het schema naar links/rechts — het loopt ' +
       'door van vrijdag t/m zondagavond, de nacht incluis. Tik op een dag om erheen ' +
-      'te springen, of op een blok voor info. ❤️ = jouw favoriet.</p>';
+      'te springen, of op een blok voor info. ' + heartSvg("heart-ico--on") +
+      ' = jouw favoriet.</p>';
 
     // ---- "Verder deze dag" (slots zonder tijd), gegroepeerd per dag ----
     DAY_ORDER.forEach(function (dayId) {
@@ -851,9 +860,10 @@
     if (favs.length === 0) {
       el("view").innerHTML =
         '<div class="empty-state">' +
-          '<div class="empty-state__emoji">❤️</div>' +
+          '<div class="empty-state__emoji">' + heartSvg("heart-ico--on") + '</div>' +
           '<h2>Nog geen favorieten</h2>' +
-          '<p>Tik bij een artiest op het <span class="heart-inline">🤍 hartje</span> ' +
+          '<p>Tik bij een artiest op het <span class="heart-inline">' + heartSvg() +
+          ' hartje</span> ' +
           'om ’m toe te voegen. Je favorieten verschijnen hier als persoonlijk tijdschema.</p>' +
           '<p class="muted">Ze worden op dit apparaat/deze browser opgeslagen.</p>' +
         '</div>';
@@ -949,7 +959,7 @@
             '<div class="tl-item__stage">📍 ' + escapeHtml(s.stage) + '</div>' +
             overlapHtml +
           '</div>' +
-          '<span class="tl-heart">❤️</span>' +
+          '<span class="tl-heart">' + heartSvg("heart-ico--on") + '</span>' +
         '</button>';
       });
 
@@ -1118,7 +1128,7 @@
           ids.length + ' act' + (ids.length === 1 ? '' : 's') + ' 🎉</h2>' +
         '<ul class="route-import__list">' + listHtml + moreHtml + '</ul>' +
         '<button class="route-import__btn route-import__btn--primary" data-routeadd="1">' +
-          '❤️ Voeg toe aan mijn favorieten</button>' +
+          heartSvg() + ' Voeg toe aan mijn favorieten</button>' +
         '<button class="route-import__btn" data-routecancel="1">Nee, laat maar</button>' +
       '</div>';
 
@@ -1214,7 +1224,8 @@
       var a = current.artist;
       var marks = "";
       if (a.tip) marks += '<span class="home-now__star" title="Tip van Serge">★</span>';
-      if (isFav(a.id)) marks += '<span class="home-now__heart" title="Favoriet">❤️</span>';
+      if (isFav(a.id)) marks += '<span class="home-now__heart" title="Favoriet">' +
+        heartSvg("heart-ico--on") + '</span>';
 
       rows += '<a class="home-now__act" href="#artiest/' + escapeHtml(a.id) + '" ' +
         'style="--stage-color:' + stageColor(st) + '">' +
@@ -1259,96 +1270,230 @@
   function sergePickFrom(arr) {
     return arr[Math.floor(Math.random() * arr.length)];
   }
-  // Levert { mode:"festival"|"listen", artist, slot } of null.
-  // excludeId zorgt dat "Doe nog een gok" nooit direct dezelfde teruggeeft.
-  function pickSergeSuggestion(excludeId) {
-    var now = new Date();
-    var during = now >= FEST_START_TS && now <= FEST_END_TS;
-    if (during) {
-      var globalNow = (now - FEST_START_TS) / 3600000;
-      var cands = sergeFestivalCandidates(globalNow);
-      var notSame = cands.filter(function (t) { return t.artist.id !== excludeId; });
-      var pool = notSame.length ? notSame : cands;
-      if (pool.length) {
-        // Voorkeur voor tip-acts (met desc).
-        var tips = pool.filter(function (t) { return t.artist.tip; });
-        var t = sergePickFrom(tips.length ? tips : pool);
-        return { mode: "festival", artist: t.artist, slot: t.slot };
-      }
-      // Geen live kandidaten in het venster (bv. nachtgat) -> luistertip.
-    }
-    // Buiten festivaltijd (of geen live kandidaten): willekeurige tip-act.
-    var listenPool = DATA.artists.filter(function (a) {
-      return sergeEligible(a) && a.tip;
-    });
-    var notSameL = listenPool.filter(function (a) { return a.id !== excludeId; });
-    var lp = notSameL.length ? notSameL : listenPool;
-    if (!lp.length) return null;
-    var a = sergePickFrom(lp);
-    var firstTimed = (a.slots || []).filter(function (s) { return s.start != null; })[0];
-    var slot = firstTimed || (a.slots || [])[0] || null;
-    return { mode: "listen", artist: a, slot: slot };
-  }
-
-  // Dag + tijd + podium voor "wanneer speelt hij" (luistertip).
+  // Dag + tijd + podium voor "wanneer speelt hij".
   function sergeWhen(slot) {
     if (!slot) return "Nog niet op het blokkenschema";
     var tijd = (slot.start && slot.end) ? (slot.start + "–" + slot.end) : "tijd nog onbekend";
     return capFirst(dayText(slot)) + " · " + tijd + " · " + slot.stage;
   }
 
-  // Bouw de aanbeveling-HTML (zonder de "Doe nog een gok"-knop).
-  function buildSergeRec(sugg) {
-    var a = sugg.artist;
-    var star = a.tip ? ' <span class="home-ask__star" title="Tip van Serge">★</span>' : '';
-    var quote = '<div class="home-ask__quote">' +
-      '<span class="home-ask__says">Serge zegt:</span> ' +
-      '<em>“' + escapeHtml(a.desc) + '”</em></div>';
-
-    if (sugg.mode === "festival") {
-      var s = sugg.slot;
-      var tijd = (s.start && s.end) ? (s.start + "–" + s.end) : "tijd nog onbekend";
-      return '<div class="home-ask__rec">' +
-        '<div class="home-ask__line">' +
-          '<a class="home-ask__name" href="#artiest/' + escapeHtml(a.id) + '">' +
-            escapeHtml(a.name) + star + '</a>' +
-        '</div>' +
-        '<div class="home-ask__meta">' + escapeHtml(tijd) + ' · ' +
-          '<a class="home-ask__stage" href="#kaart/' + stageSlug(s.stage) + '">📍 ' +
-          escapeHtml(s.stage) + '</a></div>' +
-        quote +
-      '</div>';
-    }
-    // Luistertip
-    return '<div class="home-ask__rec">' +
-      '<p class="home-ask__lead">Alvast in de stemming komen? Serge raadt ' +
-        '<a class="home-ask__name" href="#artiest/' + escapeHtml(a.id) + '">' +
-        escapeHtml(a.name) + '</a> aan:</p>' +
-      quote +
-      '<p class="home-ask__when">Speelt: ' + escapeHtml(sergeWhen(sugg.slot)) + '</p>' +
-    '</div>';
+  // Eerste getimede slot van een artiest (voor "wanneer speelt hij").
+  function firstSlotOf(a) {
+    var firstTimed = (a.slots || []).filter(function (s) { return s.start != null; })[0];
+    return firstTimed || (a.slots || [])[0] || null;
   }
 
+  function sergeQuoteHtml(a) {
+    if (!a.desc) return "";
+    return '<div class="home-ask__quote">' +
+      '<span class="home-ask__says">Serge zegt:</span> ' +
+      '<em>“' + escapeHtml(a.desc) + '”</em></div>';
+  }
+  function sergeNameLink(a) {
+    return '<a class="home-ask__name" href="#artiest/' + escapeHtml(a.id) + '">' +
+      escapeHtml(a.name) +
+      (a.tip ? ' <span class="home-ask__star" title="Tip van Serge">★</span>' : '') + '</a>';
+  }
+  function sergeStageLink(stage) {
+    return '<a class="home-ask__stage" href="#kaart/' + stageSlug(stage) + '">📍 ' +
+      escapeHtml(stage) + '</a>';
+  }
+
+  // De eerste n acts van vrijdag (op starttijd, unieke artiesten).
+  function fridayOpeners(n) {
+    var list = slotsForFestival().timed
+      .filter(function (t) { return t.slot.day === "vr"; })
+      .sort(function (a, b) { return a.gStart - b.gStart; });
+    var seen = {}, out = [];
+    list.forEach(function (t) {
+      if (out.length >= n || seen[t.artist.id]) return;
+      seen[t.artist.id] = true;
+      out.push(t);
+    });
+    return out;
+  }
+
+  // Onthoud de laatste aanbeveling zodat we nooit direct dezelfde herhalen.
   var lastSergeId = null;
-  function showSergeSuggestion() {
+
+  // Knop 1: "Wat kan ik nú doen?" — alleen acts die nu spelen of zo beginnen.
+  function showSergeNow() {
     var box = el("homeAskResult");
     if (!box) return;
-    var sugg = pickSergeSuggestion(lastSergeId);
-    var intro = el("homeAskIntro");
-    if (!sugg) {
+    var now = new Date();
+
+    // Na afloop
+    if (now > FEST_END_TS) {
+      box.innerHTML = '<div class="home-ask__rec"><p class="home-ask__lead">' +
+        'Het zit erop! Dat was Wildeburg 2026 — tot volgend jaar.</p></div>';
+      box.hidden = false;
+      return;
+    }
+    // Vóór het festival: vriendelijke boodschap + hoe vrijdag begint.
+    if (now < FEST_START_TS) {
+      var lines = fridayOpeners(3).map(function (t) {
+        return '<div class="home-ask__meta">' + escapeHtml(t.slot.start) + ' · ' +
+          sergeNameLink(t.artist) + ' · ' + sergeStageLink(t.slot.stage) + '</div>';
+      }).join("");
+      box.innerHTML = '<div class="home-ask__rec">' +
+        '<p class="home-ask__lead">Het festival is nog niet begonnen — vrijdag om ' +
+        '12:00 barst het los!</p>' +
+        (lines ? '<p class="home-ask__when">Zo trapt vrijdag af:</p>' + lines : '') +
+        '</div>';
+      box.hidden = false;
+      return;
+    }
+
+    // Tijdens het festival: nu spelend of binnen 2 uur (voorkeur voor tips).
+    var globalNow = (now - FEST_START_TS) / 3600000;
+    var cands = sergeFestivalCandidates(globalNow);
+    if (!cands.length) {
+      box.innerHTML = '<div class="home-ask__rec"><p class="home-ask__lead">' +
+        'Even geen aankomend programma — kijk zo nog eens!</p></div>';
+      box.hidden = false;
+      return;
+    }
+    var notSame = cands.filter(function (t) { return t.artist.id !== lastSergeId; });
+    var pool = notSame.length ? notSame : cands;
+    var tips = pool.filter(function (t) { return t.artist.tip; });
+    var t = sergePickFrom(tips.length ? tips : pool);
+    lastSergeId = t.artist.id;
+    var playingNow = t.gStart <= globalNow && globalNow < t.gEnd;
+    var timing = playingNow
+      ? "Speelt nu — nog tot " + t.slot.end
+      : "Begint om " + t.slot.start;
+    box.innerHTML = '<div class="home-ask__rec">' +
+      '<div class="home-ask__line">' + sergeNameLink(t.artist) + '</div>' +
+      '<div class="home-ask__meta">' + escapeHtml(timing) + ' · ' +
+        sergeStageLink(t.slot.stage) + '</div>' +
+      sergeQuoteHtml(t.artist) +
+    '</div>';
+    box.hidden = false;
+  }
+
+  // Knop 2: "Ideeën voor het hele weekend" — willekeurige tip uit het hele
+  // programma, met citaat en "Doe nog een gok".
+  function showSergeWeekend() {
+    var box = el("homeAskResult");
+    if (!box) return;
+    var pool = DATA.artists.filter(function (a) { return sergeEligible(a) && a.tip; });
+    var notSame = pool.filter(function (a) { return a.id !== lastSergeId; });
+    var lp = notSame.length ? notSame : pool;
+    if (!lp.length) {
       box.innerHTML = '<div class="home-ask__rec"><p class="home-ask__lead">' +
         'Serge is even sprakeloos — probeer het zo nog eens!</p></div>';
       box.hidden = false;
-      if (intro) intro.hidden = true;
       return;
     }
-    lastSergeId = sugg.artist.id;
-    box.innerHTML = buildSergeRec(sugg) +
-      '<button class="home-ask__again" type="button" id="askSergeAgain">Doe nog een gok</button>';
+    var a = sergePickFrom(lp);
+    lastSergeId = a.id;
+    box.innerHTML = '<div class="home-ask__rec">' +
+      '<p class="home-ask__lead">Serge raadt ' + sergeNameLink(a) + ' aan:</p>' +
+      sergeQuoteHtml(a) +
+      '<p class="home-ask__when">Speelt: ' + escapeHtml(sergeWhen(firstSlotOf(a))) + '</p>' +
+      '<button class="home-ask__again" type="button" id="askWeekendAgain">' +
+        'Doe nog een gok</button>' +
+    '</div>';
     box.hidden = false;
-    if (intro) intro.hidden = true;
-    var again = el("askSergeAgain");
-    if (again) again.addEventListener("click", showSergeSuggestion);
+    var again = el("askWeekendAgain");
+    if (again) again.addEventListener("click", showSergeWeekend);
+  }
+
+  // ---- "Ik hou van…": lijkt-op-suggesties via genre-overlap ------------
+  // Ook acts zónder notitie mogen als match terugkomen, maar hutjes/hosts en
+  // acts zonder slots niet.
+  function loveEligible(a) {
+    return a && !SERGE_EXCLUDE_TYPES[a.type] && a.slots && a.slots.length > 0;
+  }
+  function findSimilar(chosen) {
+    var cg = chosen.genres || [];
+    var out = [];
+    if (!cg.length) return out;
+    DATA.artists.forEach(function (b) {
+      if (b.id === chosen.id || !loveEligible(b)) return;
+      var shared = (b.genres || []).filter(function (g) { return cg.indexOf(g) !== -1; });
+      if (!shared.length) return;
+      out.push({ artist: b, shared: shared });
+    });
+    // Meeste gedeelde genres eerst, dan tips van Serge, dan alfabetisch.
+    out.sort(function (x, y) {
+      var d = y.shared.length - x.shared.length;
+      if (d !== 0) return d;
+      var tp = (y.artist.tip ? 1 : 0) - (x.artist.tip ? 1 : 0);
+      if (tp !== 0) return tp;
+      return x.artist.name.localeCompare(y.artist.name, "nl", { sensitivity: "base" });
+    });
+    return out.slice(0, 3);
+  }
+
+  function loveSimHtml(sim) {
+    var a = sim.artist;
+    var chips = sim.shared.map(function (g) {
+      return '<span class="mini-chip">' + escapeHtml(g) + '</span>';
+    }).join("");
+    return '<div class="love-sim">' +
+      '<div class="home-ask__line">' + sergeNameLink(a) + '</div>' +
+      (chips ? '<div class="chips love-sim__chips">' + chips + '</div>' : '') +
+      '<div class="home-ask__when">' + escapeHtml(sergeWhen(firstSlotOf(a))) + '</div>' +
+      sergeQuoteHtml(a) +
+    '</div>';
+  }
+
+  function showLoveResult(chosen) {
+    var box = el("loveResult");
+    if (!box) return;
+    var sims = findSimilar(chosen);
+    if (!sims.length) {
+      // Geen genres of geen overlap: troost met een willekeurige tip.
+      var pool = DATA.artists.filter(function (a) {
+        return sergeEligible(a) && a.tip && a.id !== chosen.id;
+      });
+      var troost = pool.length ? sergePickFrom(pool) : null;
+      box.innerHTML =
+        '<p class="home-ask__lead">Daar heeft zelfs Serge geen antwoord op — ' +
+        'probeer een andere!</p>' +
+        (troost
+          ? '<p class="home-ask__when">Willekeurige tip als troost:</p>' +
+            loveSimHtml({ artist: troost, shared: [] })
+          : '');
+      box.hidden = false;
+      return;
+    }
+    var html = '<p class="home-ask__lead">Als je <strong>' + escapeHtml(chosen.name) +
+      '</strong> goed vindt, zegt Serge: ga ook naar…</p>';
+    sims.forEach(function (sim) { html += loveSimHtml(sim); });
+    box.innerHTML = html;
+    box.hidden = false;
+  }
+
+  // Autocomplete over alle artiestnamen (accent-ongevoelig via normalize).
+  function bindLoveSearch() {
+    var input = el("loveInput");
+    var list = el("loveAcList");
+    if (!input || !list) return;
+    function hideList() { list.hidden = true; list.innerHTML = ""; }
+    input.addEventListener("input", function () {
+      var q = normalize(input.value.trim());
+      if (!q) { hideList(); return; }
+      var matches = artistsSorted.filter(function (a) {
+        return normalize(a.name).indexOf(q) !== -1;
+      }).slice(0, 7);
+      if (!matches.length) { hideList(); return; }
+      list.innerHTML = matches.map(function (a) {
+        return '<button class="love-ac__item" type="button" data-loveid="' +
+          escapeHtml(a.id) + '">' + escapeHtml(a.name) + '</button>';
+      }).join("");
+      list.hidden = false;
+      list.querySelectorAll("[data-loveid]").forEach(function (b) {
+        b.addEventListener("click", function () {
+          var chosen = byId[b.getAttribute("data-loveid")];
+          if (!chosen) return;
+          input.value = chosen.name;
+          hideList();
+          showLoveResult(chosen);
+        });
+      });
+    });
   }
 
   function renderHome() {
@@ -1358,7 +1503,7 @@
 
     var sergeText =
       '<p>Serge is de synth-nerd van de vriendengroep: het type dat op een festival ' +
-      'niet naar de dj kijkt, maar naar de kabels erachter. Nieuwsgierig naar alles ' +
+      'niet naar de artiest kijkt, maar naar de kabels erachter. Nieuwsgierig naar alles ' +
       'wat piept, bromt of knettert — hoe obscuurder, hoe beter.</p>' +
       '<p>Voor Wildeburg 2026 heeft hij alle 163 acts beluisterd. Ja, állemaal. Ook de ' +
       'autotune (daar moet hij nog even van bijkomen). Bij elke act schreef hij zijn ' +
@@ -1370,9 +1515,11 @@
     var html =
       '<section class="home">' +
         '<div class="home-hero">' +
-          '<h2 class="home-hero__title">Welkom!</h2>' +
-          '<p class="home-hero__intro">Alle artiesten van Wildeburg 2026, het complete ' +
-          'blokkenschema en de ongezouten mening van Serge bij (bijna) elke act.</p>' +
+          '<h2 class="home-hero__title">Nooit meer festival-FOMO.</h2>' +
+          '<p class="home-hero__intro">' + DATA.artists.length + ' acts, ' +
+          DATA.stages.length + ' podia, 3 dagen — en jij bang om nét dat ene toffe ' +
+          'setje te missen. Daarom staat hier alles op een rijtje: alle artiesten, ' +
+          'Serges ongezouten mening, en jouw eigen route.</p>' +
         '</div>' +
 
         '<div class="home-block">' +
@@ -1383,11 +1530,25 @@
         '<div class="home-block">' +
           '<div class="section-title">Vraag het Serge</div>' +
           '<div class="home-ask" id="homeAsk">' +
-            '<div class="home-ask__intro" id="homeAskIntro">' +
-              '<p class="home-ask__q">Help, ik weet niet waar ik heen moet!</p>' +
-              '<button class="home-ask__btn" id="askSergeBtn" type="button">Vraag het Serge</button>' +
+            '<p class="home-ask__q">Help, ik weet niet waar ik heen moet!</p>' +
+            '<div class="home-ask__btns">' +
+              '<button class="home-ask__btn" id="askNowBtn" type="button">' +
+                'Wat kan ik nú doen?</button>' +
+              '<button class="home-ask__btn home-ask__btn--alt" id="askWeekendBtn" ' +
+                'type="button">Ideeën voor het hele weekend</button>' +
             '</div>' +
             '<div class="home-ask__result" id="homeAskResult" hidden></div>' +
+            '<div class="home-ask__love">' +
+              '<p class="home-ask__q">Ik hou van…</p>' +
+              '<p class="home-ask__sub">Kies een artiest — Serge zegt waar je dan ' +
+                'nog meer heen moet.</p>' +
+              '<div class="love-ac">' +
+                '<input class="love-ac__input" id="loveInput" type="text" ' +
+                  'placeholder="Typ een artiestnaam…" autocomplete="off">' +
+                '<div class="love-ac__list" id="loveAcList" hidden></div>' +
+              '</div>' +
+              '<div class="home-ask__result" id="loveResult" hidden></div>' +
+            '</div>' +
           '</div>' +
         '</div>' +
 
@@ -1408,10 +1569,32 @@
           '<div class="home-serge__panel">' +
             '<figure class="home-serge__figure" id="sergeFigure">' +
               '<img class="home-serge__img" src="./serge.jpg" alt="Serge achter de knopjes">' +
-              '<figcaption class="home-serge__caption">Serge in het wild, in z\'n ' +
-              'natuurlijke habitat (achter de knopjes).</figcaption>' +
+              '<figcaption class="home-serge__caption">Serge die blij is omdat hij ' +
+              'nu weet waar hij heen moet op Wildeburg.</figcaption>' +
             '</figure>' +
             '<div class="home-serge__text">' + sergeText + '</div>' +
+          '</div>' +
+        '</details>' +
+
+        '<details class="home-serge" id="overApp">' +
+          '<summary class="home-serge__summary">Over deze app</summary>' +
+          '<div class="home-serge__panel">' +
+            '<figure class="home-serge__figure" id="duoFigure">' +
+              '<img class="home-serge__img" src="./duo.jpg" alt="Serge en Ariana samen">' +
+              '<figcaption class="home-serge__caption">De makers: Serge (meningen) ' +
+              '&amp; Ariana (appie).</figcaption>' +
+            '</figure>' +
+            '<div class="home-serge__text">' +
+              '<p>Wij zijn Serge &amp; Ariana — twee nerds die elk jaar een beetje ' +
+              'overspoeld raken door het Wildeburg-programma. Zoveel acts, zo weinig ' +
+              'tijd, en de angst om nét dat ene toffe setje te missen. Dus bouwden we ' +
+              'deze app, samen met Claude Fable: Serge beluisterde álles en schreef ' +
+              'de meningen, Ariana bouwde met Claude de app eromheen.</p>' +
+              '<p>Zelf zoiets maken voor jouw festival? De code staat op GitHub — ' +
+              'pak ’m, verbouw ’m, veel plezier!</p>' +
+              '<a class="app-github-btn" href="https://github.com/ArianaMadani/oppadmetserge" ' +
+                'target="_blank" rel="noopener">Bekijk de code op GitHub</a>' +
+            '</div>' +
           '</div>' +
         '</details>' +
       '</section>';
@@ -1425,21 +1608,28 @@
       location.hash = "artiesten";
     });
 
-    // "Vraag het Serge": eerste klik toont een aanbeveling in dezelfde kaart.
+    // "Vraag het Serge": twee knoppen + "Ik hou van…" in dezelfde kaart.
     lastSergeId = null;
-    var askBtn = el("askSergeBtn");
-    if (askBtn) askBtn.addEventListener("click", showSergeSuggestion);
+    var nowBtn = el("askNowBtn");
+    if (nowBtn) nowBtn.addEventListener("click", showSergeNow);
+    var wkBtn = el("askWeekendBtn");
+    if (wkBtn) wkBtn.addEventListener("click", showSergeWeekend);
+    bindLoveSearch();
 
-    // Foto-blok netjes verbergen als serge.jpg (nog) niet bestaat.
-    var sergeImg = document.querySelector("#sergeFigure .home-serge__img");
-    var sergeFig = el("sergeFigure");
-    if (sergeImg && sergeFig) {
-      sergeImg.addEventListener("error", function () { sergeFig.style.display = "none"; });
+    // Foto-blokken netjes verbergen als de afbeelding (nog) niet bestaat
+    // (serge.jpg en duo.jpg kunnen los van elkaar ontbreken).
+    function hideFigureOnError(figId) {
+      var fig = el(figId);
+      var img = fig ? fig.querySelector(".home-serge__img") : null;
+      if (!fig || !img) return;
+      img.addEventListener("error", function () { fig.style.display = "none"; });
       // Als de load al mislukt was vóór onze listener: complete + geen afmetingen.
-      if (sergeImg.complete && sergeImg.naturalWidth === 0) {
-        sergeFig.style.display = "none";
+      if (img.complete && img.naturalWidth === 0) {
+        fig.style.display = "none";
       }
     }
+    hideFigureOnError("sergeFigure");
+    hideFigureOnError("duoFigure");
 
     // Elke minuut de "Nu"-widget herberekenen zolang home zichtbaar is.
     clearHomeTimer();
@@ -1655,7 +1845,6 @@
   // ======================================================================
   function stageSetRow(a, s, color) {
     var fav = isFav(a.id);
-    var heart = fav ? "❤️" : "🤍";
     var extras = "";
     if (s.live) extras += '<span class="tag-live">LIVE</span>';
     if (s.label) extras += '<span class="tag-label">' + escapeHtml(s.label) + '</span>';
@@ -1668,7 +1857,7 @@
           (a.tip ? '<span class="tip-badge">★</span>' : '') + extras + '</div>' +
       '</div>' +
       '<button class="stage-set__heart" data-fav="' + escapeHtml(a.id) +
-        '" aria-label="Favoriet aan/uit">' + heart + '</button>' +
+        '" aria-label="Favoriet aan/uit">' + heartSvg() + '</button>' +
     '</div>';
   }
 
@@ -1762,7 +1951,7 @@
         var id = btn.getAttribute("data-fav");
         toggleFav(id);
         var nowFav = isFav(id);
-        btn.textContent = nowFav ? "❤️" : "🤍";
+        // Het SVG-hart in de rij kleurt/vult mee via de .is-fav-class.
         var row = btn.closest(".stage-set");
         if (row) row.classList.toggle("is-fav", nowFav);
       });

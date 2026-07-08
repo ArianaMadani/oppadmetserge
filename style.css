@@ -324,6 +324,39 @@ body {
   color: #9a9075;
 }
 
+/* ---------- SVG-hart (zelfde vorm als in de tabbar) ----------
+   Outline gedempt wanneer niet-favoriet; koraal gevuld zodra een ouder-element
+   .is-fav heeft, of met de altijd-aan variant .heart-ico--on. */
+.heart-ico {
+  width: 1.1em;
+  height: 1.1em;
+  display: inline-block;
+  vertical-align: -0.16em;
+  color: #b9ad8d; /* gedempte outline op crème kaarten */
+  transition: color 0.15s ease;
+}
+.heart-ico path {
+  fill: transparent;
+  transition: fill 0.15s ease;
+}
+.is-fav .heart-ico,
+.heart-ico--on { color: var(--coral); }
+.is-fav .heart-ico path,
+.heart-ico--on path { fill: currentColor; }
+
+/* Context-correcties (na de generieke regels, zodat ze winnen) */
+.detail__fav .heart-ico { color: var(--sand-200); }
+.detail__fav.is-fav .heart-ico { color: #fff; }
+.toggle-chip .heart-ico { color: currentColor; }
+.toggle-chip .heart-ico path { fill: transparent; }
+.toggle-chip.is-active .heart-ico path { fill: currentColor; }
+.route-import__btn--primary .heart-ico { color: #fff; }
+.fav-corner .heart-ico { color: #fff; }
+.fav-corner .heart-ico path { fill: currentColor; }
+.schedule-hint .heart-ico--on { vertical-align: -0.2em; }
+.empty-state__emoji .heart-ico { width: 46px; height: 46px; }
+.heart-inline .heart-ico { color: var(--coral); }
+
 /* Hartje op de kaart (favoriet) */
 .fav-btn {
   border: none;
@@ -337,8 +370,7 @@ body {
   -webkit-tap-highlight-color: transparent;
 }
 .fav-btn:active { transform: scale(1.25); }
-.fav-btn.is-fav { filter: none; }
-.fav-btn__heart-empty { opacity: 0.9; }
+.fav-btn .heart-ico { display: block; }
 
 .artist-card .fav-btn {
   position: absolute;
@@ -1022,6 +1054,94 @@ body {
   color: var(--ink-soft);
 }
 
+/* Twee keuzeknoppen naast elkaar (wrappen op smal scherm) */
+.home-ask__btns {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-bottom: 12px;
+}
+.home-ask__btns .home-ask__btn { flex: 1 1 auto; }
+.home-ask__btn--alt { background: var(--green-700); }
+@media (hover: hover) {
+  .home-ask__btn--alt:hover { background: var(--green-600); }
+}
+.home-ask__sub {
+  margin: -4px 0 10px;
+  font-size: 13px;
+  color: var(--ink-soft);
+}
+
+/* "Ik hou van…" — blok onder de aanbevelingen */
+.home-ask__love {
+  margin-top: 16px;
+  padding-top: 14px;
+  border-top: 1px solid rgba(20, 43, 30, 0.1);
+}
+.love-ac { position: relative; }
+.love-ac__input {
+  width: 100%;
+  font-size: 16px;
+  font-family: inherit;
+  padding: 11px 13px;
+  border: 1px solid var(--sand-300);
+  border-radius: var(--radius-sm);
+  background: #fff;
+  color: var(--ink);
+}
+.love-ac__input::placeholder { color: #8a8570; }
+.love-ac__input:focus-visible {
+  outline: 2px solid var(--coral);
+  outline-offset: -1px;
+}
+/* Suggestielijstje onder het veld */
+.love-ac__list {
+  position: absolute;
+  left: 0; right: 0;
+  top: calc(100% + 4px);
+  z-index: 35;
+  background: #fff;
+  border-radius: var(--radius-sm);
+  box-shadow: var(--shadow-lg);
+  overflow-y: auto;
+  max-height: 250px;
+}
+.love-ac__item {
+  display: block;
+  width: 100%;
+  text-align: left;
+  border: none;
+  background: none;
+  cursor: pointer;
+  font-family: inherit;
+  font-size: 14.5px;
+  font-weight: 600;
+  padding: 11px 13px;
+  color: var(--ink);
+  border-bottom: 1px solid var(--sand-100);
+}
+.love-ac__item:last-child { border-bottom: none; }
+@media (hover: hover) {
+  .love-ac__item:hover { background: var(--sand-100); }
+}
+
+/* Lijkt-op-suggestiekaartjes */
+.love-sim {
+  margin-top: 10px;
+  padding: 11px 12px;
+  background: #fff;
+  border: 1px solid var(--sand-200);
+  border-radius: var(--radius-sm);
+}
+.love-sim .home-ask__when { margin: 4px 0 8px; }
+.love-sim .home-ask__quote { margin-top: 0; }
+.love-sim__chips { margin: 5px 0 2px; }
+#loveResult.home-ask__result {
+  border-top: none;
+  padding-top: 0;
+  margin-top: 10px;
+}
+
 /* Over Serge — inklapbare accordion onderaan home */
 .home-serge {
   margin-top: 14px;
@@ -1083,6 +1203,26 @@ body {
   color: var(--ink);
 }
 .home-serge__text p:last-child { margin-bottom: 0; }
+
+/* "Bekijk de code op GitHub"-knop in de Over-deze-app-accordion */
+.app-github-btn {
+  display: block;
+  text-align: center;
+  margin: 14px 0 2px;
+  padding: 12px 16px;
+  border-radius: var(--radius);
+  background: var(--green-700);
+  color: var(--sand-50);
+  font-size: 14.5px;
+  font-weight: 700;
+  text-decoration: none;
+  box-shadow: var(--shadow);
+  transition: transform 0.08s ease, background-color 0.15s ease;
+}
+.app-github-btn:active { transform: scale(0.985); }
+@media (hover: hover) {
+  .app-github-btn:hover { background: var(--green-600); }
+}
 
 /* ---------- Kaart ---------- */
 .map-wrap {
