@@ -196,6 +196,12 @@
     rememberScroll();
     clearHomeTimer(); // stop de minuut-tik zodra we (mogelijk) home verlaten
 
+    // Gedeelde route-link: #route=<id,id,...> (let op: géén "/"-formaat).
+    if (hash.indexOf("route=") === 0) {
+      renderRouteImport(hash.slice("route=".length));
+      setActiveTab(null);
+      return;
+    }
     if (hash === "" || parts[0] === "home") {
       renderHome();
       setActiveTab("home");
@@ -876,6 +882,13 @@
 
     var html = '';
 
+    // Deel-knop bovenaan (er is hier altijd ≥ 1 favoriet).
+    html += '<div class="share-row">' +
+      '<button class="share-btn" id="shareRouteBtn" type="button">' +
+        '📤 Dit is mijn route — deel ’m!</button>' +
+      '<div class="share-feedback" id="shareFeedback" hidden></div>' +
+      '</div>';
+
     DAY_ORDER.forEach(function (dayId) {
       var items = perDay[dayId];
       if (!items || items.length === 0) return;
@@ -946,6 +959,149 @@
       b.addEventListener("click", function () {
         location.hash = "artiest/" + b.getAttribute("data-artist");
       });
+    });
+
+    var shareBtn = el("shareRouteBtn");
+    if (shareBtn) shareBtn.addEventListener("click", shareRoute);
+
+    scrollTop();
+  }
+
+  // ======================================================================
+  //  ROUTE DELEN ("Dit is mijn route") + IMPORTEREN via #route=<ids>
+  // ======================================================================
+
+  // Bouw de deel-link dynamisch uit location (domein verhuist binnenkort,
+  // dus NIETS hardcoden).
+  function buildRouteUrl() {
+    return location.origin + location.pathname + "#route=" + favs.join(",");
+  }
+
+  function showShareFeedback(msg) {
+    var fb = el("shareFeedback");
+    if (!fb) return;
+    fb.textContent = msg;
+    fb.hidden = false;
+  }
+
+  // Kopieer-fallback voor browsers zonder navigator.clipboard (of zonder
+  // https): onzichtbare textarea + execCommand("copy").
+  function legacyCopy(text) {
+    try {
+      var ta = document.createElement("textarea");
+      ta.value = text;
+      ta.setAttribute("readonly", "");
+      ta.style.position = "fixed";
+      ta.style.left = "-9999px";
+      document.body.appendChild(ta);
+      ta.select();
+      ta.setSelectionRange(0, ta.value.length);
+      var ok = document.execCommand("copy");
+      document.body.removeChild(ta);
+      return ok;
+    } catch (e) { return false; }
+  }
+
+  function copyRouteUrl(url) {
+    var COPIED = "Link gekopieerd! Plak ’m in je groepsapp 💚";
+    if (navigator.clipboard && navigator.clipboard.writeText) {
+      navigator.clipboard.writeText(url).then(function () {
+        showShareFeedback(COPIED);
+      }).catch(function () {
+        if (legacyCopy(url)) showShareFeedback(COPIED);
+        else showShareFeedback("Kopiëren lukte niet — dit is je link: " + url);
+      });
+    } else if (legacyCopy(url)) {
+      showShareFeedback(COPIED);
+    } else {
+      showShareFeedback("Kopiëren lukte niet — dit is je link: " + url);
+    }
+  }
+
+  function shareRoute() {
+    if (!favs.length) return;
+    var url = buildRouteUrl();
+    if (navigator.share) {
+      navigator.share({
+        title: "Op pad met Serge — mijn Wildeburg-route",
+        text: "Dit is mijn Wildeburg-route! 🌲",
+        url: url
+      }).catch(function (err) {
+        // Geannuleerd door de gebruiker = prima; anders alsnog kopiëren.
+        if (err && err.name !== "AbortError") copyRouteUrl(url);
+      });
+    } else {
+      copyRouteUrl(url);
+    }
+  }
+
+  // Na een import-keuze: #route=… uit de URL halen (zodat herladen niet
+  // opnieuw vraagt) en doorgaan naar de gewenste tab.
+  function finishRouteImport(targetHash) {
+    if (history.replaceState) {
+      history.replaceState(null, "", location.pathname + location.search + "#" + targetHash);
+      route(); // replaceState vuurt geen hashchange, dus zelf routeren
+    } else {
+      location.hash = targetHash; // heel oude browsers: gewoon navigeren
+    }
+  }
+
+  function renderRouteImport(idsParam) {
+    currentView = "route-import";
+
+    // Parse: komma-gescheiden ids; onbekende ids stil negeren, dubbelen ook.
+    var ids = [];
+    decodeURIComponent(idsParam || "").split(",").forEach(function (raw) {
+      var id = raw.trim();
+      if (id && byId[id] && ids.indexOf(id) === -1) ids.push(id);
+    });
+
+    if (ids.length === 0) {
+      el("view").innerHTML =
+        '<div class="route-import">' +
+          '<div class="route-import__emoji">🤔</div>' +
+          '<h2 class="route-import__title">Deze route-link bevat geen (bekende) acts</h2>' +
+          '<p class="route-import__sub">Vraag je vriend(in) om de link opnieuw te delen.</p>' +
+          '<button class="route-import__btn route-import__btn--primary" data-routeok="1">' +
+            'Naar home</button>' +
+        '</div>';
+      document.querySelector("[data-routeok]").addEventListener("click", function () {
+        finishRouteImport("home");
+      });
+      scrollTop();
+      return;
+    }
+
+    var names = ids.map(function (id) { return byId[id].name; });
+    var MAX_NAMES = 6;
+    var listHtml = names.slice(0, MAX_NAMES).map(function (n) {
+      return '<li>' + escapeHtml(n) + '</li>';
+    }).join("");
+    var moreHtml = names.length > MAX_NAMES
+      ? '<li class="route-import__more">en ' + (names.length - MAX_NAMES) + ' meer…</li>'
+      : '';
+
+    el("view").innerHTML =
+      '<div class="route-import">' +
+        '<div class="route-import__emoji">📬</div>' +
+        '<h2 class="route-import__title">Iemand deelt z’n Wildeburg-route met je: ' +
+          ids.length + ' act' + (ids.length === 1 ? '' : 's') + ' 🎉</h2>' +
+        '<ul class="route-import__list">' + listHtml + moreHtml + '</ul>' +
+        '<button class="route-import__btn route-import__btn--primary" data-routeadd="1">' +
+          '❤️ Voeg toe aan mijn favorieten</button>' +
+        '<button class="route-import__btn" data-routecancel="1">Nee, laat maar</button>' +
+      '</div>';
+
+    document.querySelector("[data-routeadd]").addEventListener("click", function () {
+      // UNION: alleen toevoegen wat nog niet favoriet is; niets verwijderen.
+      ids.forEach(function (id) {
+        if (favs.indexOf(id) === -1) favs.push(id);
+      });
+      saveFavs();
+      finishRouteImport("mijn");
+    });
+    document.querySelector("[data-routecancel]").addEventListener("click", function () {
+      finishRouteImport("home");
     });
 
     scrollTop();
