@@ -1783,6 +1783,15 @@
             '</div>' +
           '</div>' +
         '</details>' +
+        '<details class="home-serge" id="qrCode">' +
+          '<summary class="home-serge__summary">Deel de app — QR-code</summary>' +
+          '<div class="home-serge__panel qr-panel">' +
+            '<img class="qr-img" src="./qr.png" alt="QR-code naar oppadmetserge.nl" ' +
+              'onerror="this.parentElement.hidden = true">' +
+            '<p class="qr-caption">Laat je vrienden deze scannen met hun camera — ' +
+            'ze komen direct op oppadmetserge.nl.</p>' +
+          '</div>' +
+        '</details>' +
       '</section>';
 
     el("view").innerHTML = html;

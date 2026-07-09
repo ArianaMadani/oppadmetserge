@@ -26,6 +26,7 @@ var OPTIONAL_ASSETS = [
   "./favicon.svg",
   "./apple-touch-icon.png",
   "./duo.jpg",
+  "./qr.png",
   "./kaart.jpg"
 ];
 
