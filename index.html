@@ -3,104 +3,131 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
-  <title>Op pad met Serge op Wildeburg 2026</title>
+  <title>Landjuweel 2026 — wie gaat mee?</title>
+  <meta name="description" content="Geef door of je meegaat naar het Landjuweel (23–26 juli, Ruigoord), of je een kaartje hebt en of je in een huisje wilt.">
   <link rel="icon" type="image/svg+xml" href="favicon.svg">
-  <link rel="apple-touch-icon" sizes="180x180" href="apple-touch-icon.png">
-  <!-- Voorbeeldplaatje voor deelmenu's/link-previews (iOS, WhatsApp, etc.) -->
-  <meta property="og:title" content="Op pad met Serge op Wildeburg 2026">
-  <meta property="og:description" content="Nooit meer festival-FOMO: alle acts, Serges ongezouten mening en jouw eigen route.">
-  <meta property="og:image" content="https://oppadmetserge.nl/og-image.jpg">
-  <meta property="og:image:width" content="800">
-  <meta property="og:image:height" content="420">
-  <meta property="og:url" content="https://oppadmetserge.nl/">
-  <meta property="og:type" content="website">
-  <meta name="theme-color" content="#142b1e">
+  <meta name="theme-color" content="#221040">
   <link rel="stylesheet" href="style.css">
 </head>
 <body>
-  <header class="app-header">
-    <div class="app-header__inner">
-      <h1 class="app-header__title">Op pad met Serge op Wildeburg 2026</h1>
-      <p class="app-header__subtitle">10–12 juli · Kraggenburg</p>
-    </div>
+
+  <!-- Kop -->
+  <header class="kop">
+    <div class="kop__ballon">🎪</div>
+    <h1 class="kop__titel">Landjuweel 2026</h1>
+    <p class="kop__sub">do 23 t/m zo 26 juli · Ruigoord</p>
+    <p class="kop__vraag">Wie gaat er mee? Vul het hieronder in, dan hebben we eindelijk overzicht.</p>
   </header>
 
-  <main id="view" class="view">
-    <!-- Wordt gevuld door app.js -->
+  <!-- Meldingen (nog niet gekoppeld / laadfout / demo) -->
+  <div id="melding" class="melding" hidden></div>
+
+  <main id="inhoud">
+
+    <!-- ============ Tab: Invullen ============ -->
+    <section id="tab-invullen" class="tab">
+      <form id="formulier" class="kaart formulier" autocomplete="off">
+        <label class="veld">
+          <span class="veld__label">Je naam</span>
+          <input type="text" id="f-naam" name="naam" required maxlength="40"
+                 placeholder="bijv. Serge" list="namenlijst">
+          <datalist id="namenlijst"></datalist>
+          <span class="veld__hint" id="naam-hint" hidden></span>
+        </label>
+
+        <div class="veld">
+          <span class="veld__label">Ga je mee naar het Landjuweel?</span>
+          <div class="keuzeknoppen" id="f-meegaan" role="radiogroup">
+            <button type="button" class="keuzeknop" data-waarde="ja">🎉 Ja!</button>
+            <button type="button" class="keuzeknop" data-waarde="misschien">🤔 Misschien</button>
+            <button type="button" class="keuzeknop" data-waarde="nee">😢 Nee</button>
+          </div>
+        </div>
+
+        <div class="veld">
+          <span class="veld__label">Hoeveel kaartjes heb je al? <small>(ook als je er voor anderen hebt)</small></span>
+          <div class="teller">
+            <button type="button" class="teller__knop" id="kaartjes-min" aria-label="minder">−</button>
+            <span class="teller__getal" id="kaartjes-getal">0</span>
+            <button type="button" class="teller__knop" id="kaartjes-plus" aria-label="meer">+</button>
+          </div>
+          <span class="veld__hint" id="kaartjes-hint">0 = nog geen kaartje</span>
+        </div>
+
+        <div id="blok-verblijf">
+          <div class="veld">
+            <span class="veld__label">Wil je in een huisje slapen?</span>
+            <div class="keuzeknoppen" id="f-huisje" role="radiogroup">
+              <button type="button" class="keuzeknop" data-waarde="ja">🏠 Ja, graag</button>
+              <button type="button" class="keuzeknop" data-waarde="nee">⛺ Nee, ik regel zelf iets</button>
+            </div>
+          </div>
+
+          <div class="veld veld--half">
+            <label>
+              <span class="veld__label">Ik kom op</span>
+              <select id="f-aankomst"></select>
+            </label>
+            <label>
+              <span class="veld__label">Ik ga weg op</span>
+              <select id="f-vertrek"></select>
+            </label>
+          </div>
+        </div>
+
+        <label class="veld">
+          <span class="veld__label">Opmerkingen <small>(niet verplicht)</small></span>
+          <textarea id="f-opmerking" rows="2" maxlength="300"
+                    placeholder="bijv. 'ik heb 2 kaartjes over' of 'ik kom pas zaterdagmiddag'"></textarea>
+        </label>
+
+        <button type="submit" class="verstuur" id="verstuurknop">Versturen ✨</button>
+        <p class="formulier__uitleg">Al eerder ingevuld? Vul dezelfde naam in, dan wordt je antwoord bijgewerkt.</p>
+      </form>
+    </section>
+
+    <!-- ============ Tab: Wie gaat mee ============ -->
+    <section id="tab-overzicht" class="tab" hidden>
+      <div class="tegels" id="tegels"></div>
+      <div id="mensenlijst"></div>
+    </section>
+
+    <!-- ============ Tab: Huisjes ============ -->
+    <section id="tab-huisjes" class="tab" hidden>
+      <div id="huisjeslijst"></div>
+      <div id="intedelen"></div>
+      <div class="beheer-balk">
+        <button type="button" class="beheer-knop" id="beheerknop">🔑 Huisjes indelen</button>
+      </div>
+    </section>
+
   </main>
 
-  <nav class="tabbar" aria-label="Hoofdnavigatie">
-    <a class="tabbar__btn" data-tab="home" href="#home">
-      <span class="tabbar__icon" aria-hidden="true">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-          <path d="M3 10.5 12 3l9 7.5"/>
-          <path d="M5 9.8V20a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1V9.8"/>
-          <path d="M9.5 21v-6h5v6"/>
-        </svg>
-      </span>
-      <span class="tabbar__label">Home</span>
+  <!-- Succes-toast -->
+  <div id="toast" class="toast" hidden></div>
+
+  <!-- Tabbalk onderin -->
+  <nav class="tabbar">
+    <a class="tabbar__btn is-actief" data-tab="invullen" href="#invullen">
+      <span class="tabbar__icoon">✍️</span><span class="tabbar__tekst">Invullen</span>
     </a>
-    <a class="tabbar__btn" data-tab="artiesten" href="#artiesten">
-      <span class="tabbar__icon" aria-hidden="true">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-          <path d="M9 18V5l12-2v13"/>
-          <circle cx="6" cy="18" r="3"/>
-          <circle cx="18" cy="16" r="3"/>
-        </svg>
-      </span>
-      <span class="tabbar__label">Artiesten</span>
+    <a class="tabbar__btn" data-tab="overzicht" href="#overzicht">
+      <span class="tabbar__icoon">👥</span><span class="tabbar__tekst">Wie gaat mee</span>
     </a>
-    <a class="tabbar__btn" data-tab="schema" href="#schema">
-      <span class="tabbar__icon" aria-hidden="true">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-          <rect x="3" y="4" width="18" height="16" rx="2"/>
-          <line x1="8" y1="4" x2="8" y2="20"/>
-          <rect x="10.5" y="7" width="7" height="3.4" rx="1"/>
-          <rect x="10.5" y="13" width="4.5" height="3.4" rx="1"/>
-        </svg>
-      </span>
-      <span class="tabbar__label">Schema</span>
-    </a>
-    <a class="tabbar__btn" data-tab="kaart" href="#kaart">
-      <span class="tabbar__icon" aria-hidden="true">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-          <path d="M12 21s7-6.3 7-11a7 7 0 0 0-14 0c0 4.7 7 11 7 11z"/>
-          <circle cx="12" cy="10" r="2.6"/>
-        </svg>
-      </span>
-      <span class="tabbar__label">Kaart</span>
-    </a>
-    <a class="tabbar__btn" data-tab="mijn" href="#mijn">
-      <span class="tabbar__icon" aria-hidden="true">
-        <svg class="tab-ico-heart" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-          <path d="M20.8 5.1a5.4 5.4 0 0 0-7.7 0l-1.1 1.1-1.1-1.1a5.4 5.4 0 1 0-7.7 7.7l1.1 1.1L12 21l7.7-7.1 1.1-1.1a5.4 5.4 0 0 0 0-7.7z"/>
-        </svg>
-      </span>
-      <span class="tabbar__label">Favorieten</span>
+    <a class="tabbar__btn" data-tab="huisjes" href="#huisjes">
+      <span class="tabbar__icoon">🏠</span><span class="tabbar__tekst">Huisjes</span>
     </a>
   </nav>
 
-  <!-- Data eerst laden (globale WILDEBURG_DATA), dan de app -->
-  <script src="data.js"></script>
-  <!-- data.js declareert `const WILDEBURG_DATA`; die staat in de global lexical
-       scope maar NIET op window. Hier zetten we 'm expliciet op window zodat app.js
-       (los <script>) er altijd bij kan, ook via file:// -->
-  <script>window.WILDEBURG_DATA = WILDEBURG_DATA;</script>
-  <script src="app.js"></script>
-
-  <!-- Service worker voor offline gebruik op het festival. Alleen op de echte
-       (https) site registreren — NIET op file:// of localhost, zodat lokaal
-       testen altijd verse bestanden laadt en er geen oude cache blijft hangen. -->
   <script>
-    (function () {
-      var host = location.hostname;
-      var isLocal = host === "localhost" || host === "127.0.0.1" || host === "";
-      if ("serviceWorker" in navigator && location.protocol === "https:" && !isLocal) {
-        window.addEventListener("load", function () {
-          navigator.serviceWorker.register("./sw.js").catch(function () {});
-        });
-      }
-    })();
+    // De oude Wildeburg-app cachete deze site offline via een service worker.
+    // Die ruimen we op; de nieuwe sw.js meldt zichzelf af en leegt de caches.
+    if ("serviceWorker" in navigator && location.protocol === "https:") {
+      window.addEventListener("load", function () {
+        navigator.serviceWorker.register("./sw.js").catch(function () {});
+      });
+    }
   </script>
+  <script src="app.js"></script>
 </body>
 </html>

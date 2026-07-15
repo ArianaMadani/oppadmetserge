@@ -1,0 +1,106 @@
+<!DOCTYPE html>
+<html lang="nl">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+  <title>Op pad met Serge op Wildeburg 2026</title>
+  <link rel="icon" type="image/svg+xml" href="favicon.svg">
+  <link rel="apple-touch-icon" sizes="180x180" href="apple-touch-icon.png">
+  <!-- Voorbeeldplaatje voor deelmenu's/link-previews (iOS, WhatsApp, etc.) -->
+  <meta property="og:title" content="Op pad met Serge op Wildeburg 2026">
+  <meta property="og:description" content="Nooit meer festival-FOMO: alle acts, Serges ongezouten mening en jouw eigen route.">
+  <meta property="og:image" content="https://oppadmetserge.nl/og-image.jpg">
+  <meta property="og:image:width" content="800">
+  <meta property="og:image:height" content="420">
+  <meta property="og:url" content="https://oppadmetserge.nl/">
+  <meta property="og:type" content="website">
+  <meta name="theme-color" content="#142b1e">
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <header class="app-header">
+    <div class="app-header__inner">
+      <h1 class="app-header__title">Op pad met Serge op Wildeburg 2026</h1>
+      <p class="app-header__subtitle">10–12 juli · Kraggenburg</p>
+    </div>
+  </header>
+
+  <main id="view" class="view">
+    <!-- Wordt gevuld door app.js -->
+  </main>
+
+  <nav class="tabbar" aria-label="Hoofdnavigatie">
+    <a class="tabbar__btn" data-tab="home" href="#home">
+      <span class="tabbar__icon" aria-hidden="true">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M3 10.5 12 3l9 7.5"/>
+          <path d="M5 9.8V20a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1V9.8"/>
+          <path d="M9.5 21v-6h5v6"/>
+        </svg>
+      </span>
+      <span class="tabbar__label">Home</span>
+    </a>
+    <a class="tabbar__btn" data-tab="artiesten" href="#artiesten">
+      <span class="tabbar__icon" aria-hidden="true">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M9 18V5l12-2v13"/>
+          <circle cx="6" cy="18" r="3"/>
+          <circle cx="18" cy="16" r="3"/>
+        </svg>
+      </span>
+      <span class="tabbar__label">Artiesten</span>
+    </a>
+    <a class="tabbar__btn" data-tab="schema" href="#schema">
+      <span class="tabbar__icon" aria-hidden="true">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <rect x="3" y="4" width="18" height="16" rx="2"/>
+          <line x1="8" y1="4" x2="8" y2="20"/>
+          <rect x="10.5" y="7" width="7" height="3.4" rx="1"/>
+          <rect x="10.5" y="13" width="4.5" height="3.4" rx="1"/>
+        </svg>
+      </span>
+      <span class="tabbar__label">Schema</span>
+    </a>
+    <a class="tabbar__btn" data-tab="kaart" href="#kaart">
+      <span class="tabbar__icon" aria-hidden="true">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M12 21s7-6.3 7-11a7 7 0 0 0-14 0c0 4.7 7 11 7 11z"/>
+          <circle cx="12" cy="10" r="2.6"/>
+        </svg>
+      </span>
+      <span class="tabbar__label">Kaart</span>
+    </a>
+    <a class="tabbar__btn" data-tab="mijn" href="#mijn">
+      <span class="tabbar__icon" aria-hidden="true">
+        <svg class="tab-ico-heart" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M20.8 5.1a5.4 5.4 0 0 0-7.7 0l-1.1 1.1-1.1-1.1a5.4 5.4 0 1 0-7.7 7.7l1.1 1.1L12 21l7.7-7.1 1.1-1.1a5.4 5.4 0 0 0 0-7.7z"/>
+        </svg>
+      </span>
+      <span class="tabbar__label">Favorieten</span>
+    </a>
+  </nav>
+
+  <!-- Data eerst laden (globale WILDEBURG_DATA), dan de app -->
+  <script src="data.js"></script>
+  <!-- data.js declareert `const WILDEBURG_DATA`; die staat in de global lexical
+       scope maar NIET op window. Hier zetten we 'm expliciet op window zodat app.js
+       (los <script>) er altijd bij kan, ook via file:// -->
+  <script>window.WILDEBURG_DATA = WILDEBURG_DATA;</script>
+  <script src="app.js"></script>
+
+  <!-- Service worker voor offline gebruik op het festival. Alleen op de echte
+       (https) site registreren — NIET op file:// of localhost, zodat lokaal
+       testen altijd verse bestanden laadt en er geen oude cache blijft hangen. -->
+  <script>
+    (function () {
+      var host = location.hostname;
+      var isLocal = host === "localhost" || host === "127.0.0.1" || host === "";
+      if ("serviceWorker" in navigator && location.protocol === "https:" && !isLocal) {
+        window.addEventListener("load", function () {
+          navigator.serviceWorker.register("./sw.js").catch(function () {});
+        });
+      }
+    })();
+  </script>
+</body>
+</html>
