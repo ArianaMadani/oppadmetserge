@@ -97,8 +97,25 @@
       <div id="huisjeslijst"></div>
       <div id="intedelen"></div>
       <div class="beheer-balk">
-        <button type="button" class="beheer-knop" id="beheerknop">🔑 Huisjes indelen</button>
+        <button type="button" class="beheer-knop" id="beheerknop">✏️ Huisjes indelen</button>
       </div>
+    </section>
+
+    <!-- ============ Tab: Boodschappen ============ -->
+    <section id="tab-boodschappen" class="tab" hidden>
+      <form id="boodschap-formulier" class="kaart formulier" autocomplete="off">
+        <label class="veld">
+          <span class="veld__label">Wat neem je mee?</span>
+          <input type="text" id="b-wat" maxlength="60" placeholder="bijv. bbq, krat bier, ehbo-doos">
+          <span class="veld__hint veld__hint--waarschuwing" id="b-waarschuwing" hidden></span>
+        </label>
+        <label class="veld">
+          <span class="veld__label">Je naam</span>
+          <input type="text" id="b-wie" maxlength="40" placeholder="bijv. Serge" list="namenlijst">
+        </label>
+        <button type="submit" class="verstuur" id="b-knop">Op de lijst zetten 🛒</button>
+      </form>
+      <div id="boodschappenlijst"></div>
     </section>
 
   </main>
@@ -116,6 +133,9 @@
     </a>
     <a class="tabbar__btn" data-tab="huisjes" href="#huisjes">
       <span class="tabbar__icoon">🏠</span><span class="tabbar__tekst">Huisjes</span>
+    </a>
+    <a class="tabbar__btn" data-tab="boodschappen" href="#boodschappen">
+      <span class="tabbar__icoon">🛒</span><span class="tabbar__tekst">Meenemen</span>
     </a>
   </nav>
 

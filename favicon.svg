@@ -1,0 +1,9 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64">
+  <!-- Circustentje in Landjuweel-kleuren -->
+  <circle cx="32" cy="32" r="30" fill="#221040"/>
+  <path d="M32 10 L10 40 H54 Z" fill="#ff4fa3"/>
+  <path d="M32 10 L21 40 H43 Z" fill="#ff8c42"/>
+  <path d="M32 10 L27.5 40 H36.5 Z" fill="#ffd166"/>
+  <rect x="12" y="40" width="40" height="6" rx="3" fill="#2ec4b6"/>
+  <circle cx="32" cy="9" r="3.4" fill="#ffd166"/>
+</svg>

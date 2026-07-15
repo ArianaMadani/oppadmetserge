@@ -1,0 +1,495 @@
+/* ========================================================================
+   Landjuweel 2026 — wie gaat mee?
+   Kleurig Ruigoord-thema: nachtpaars met roze, oranje en geel.
+   Mobiel eerst; werkt ook prima op een groot scherm.
+   ======================================================================== */
+
+:root {
+  --achtergrond: #221040;
+  --achtergrond-diep: #180b30;
+  --kaart: #2f1a55;
+  --kaart-licht: #3b2468;
+  --rand: rgba(255, 255, 255, 0.12);
+  --tekst: #f6efff;
+  --tekst-zacht: #c4b3e0;
+  --roze: #ff4fa3;
+  --oranje: #ff8c42;
+  --geel: #ffd166;
+  --groen: #4ade80;
+  --turkoois: #2ec4b6;
+  --rood: #ff6b6b;
+  --schaduw: 0 8px 24px rgba(0, 0, 0, 0.35);
+  --radius: 18px;
+}
+
+* { margin: 0; padding: 0; box-sizing: border-box; }
+
+html { -webkit-text-size-adjust: 100%; }
+
+body {
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+  background:
+    radial-gradient(1000px 500px at 85% -10%, rgba(255, 79, 163, 0.25), transparent 60%),
+    radial-gradient(800px 400px at -10% 15%, rgba(46, 196, 182, 0.18), transparent 60%),
+    var(--achtergrond);
+  color: var(--tekst);
+  min-height: 100vh;
+  padding-bottom: calc(84px + env(safe-area-inset-bottom));
+  line-height: 1.5;
+}
+
+main { max-width: 640px; margin: 0 auto; padding: 0 16px; }
+
+/* ---------------- Kop ---------------- */
+
+.kop {
+  text-align: center;
+  padding: 34px 20px 10px;
+  max-width: 640px;
+  margin: 0 auto;
+}
+
+.kop__ballon { font-size: 44px; }
+
+.kop__titel {
+  font-size: 34px;
+  font-weight: 800;
+  letter-spacing: -0.5px;
+  background: linear-gradient(100deg, var(--geel), var(--oranje) 40%, var(--roze));
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+}
+
+.kop__sub {
+  color: var(--geel);
+  font-weight: 600;
+  margin-top: 2px;
+}
+
+.kop__vraag {
+  color: var(--tekst-zacht);
+  margin: 10px auto 0;
+  max-width: 420px;
+  font-size: 15px;
+}
+
+/* ---------------- Meldingen & toast ---------------- */
+
+.melding {
+  max-width: 640px;
+  margin: 14px auto 0;
+  padding: 12px 16px;
+  border-radius: 12px;
+  background: rgba(255, 209, 102, 0.14);
+  border: 1px solid rgba(255, 209, 102, 0.4);
+  color: var(--geel);
+  font-size: 14px;
+}
+@media (max-width: 672px) { .melding { margin-left: 16px; margin-right: 16px; } }
+
+.melding--fout {
+  background: rgba(255, 107, 107, 0.12);
+  border-color: rgba(255, 107, 107, 0.4);
+  color: var(--rood);
+}
+
+.toast {
+  position: fixed;
+  left: 50%;
+  bottom: calc(100px + env(safe-area-inset-bottom));
+  transform: translateX(-50%);
+  background: var(--groen);
+  color: #0c2913;
+  font-weight: 700;
+  padding: 12px 22px;
+  border-radius: 999px;
+  box-shadow: var(--schaduw);
+  z-index: 30;
+  max-width: 90vw;
+  text-align: center;
+}
+
+/* ---------------- Tabs ---------------- */
+
+.tab { padding-top: 18px; animation: verschijn 0.25s ease; }
+
+@keyframes verschijn {
+  from { opacity: 0; transform: translateY(6px); }
+  to   { opacity: 1; transform: none; }
+}
+
+/* ---------------- Kaarten (algemeen) ---------------- */
+
+.kaart {
+  background: var(--kaart);
+  border: 1px solid var(--rand);
+  border-radius: var(--radius);
+  box-shadow: var(--schaduw);
+  padding: 20px;
+}
+
+/* ---------------- Formulier ---------------- */
+
+.formulier { display: flex; flex-direction: column; gap: 20px; }
+
+.veld { display: flex; flex-direction: column; gap: 8px; }
+
+.veld__label { font-weight: 700; font-size: 15px; }
+.veld__label small { font-weight: 500; color: var(--tekst-zacht); }
+
+.veld__hint { font-size: 13px; color: var(--tekst-zacht); }
+
+.veld--half {
+  flex-direction: row;
+  gap: 12px;
+}
+.veld--half label {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  min-width: 0;
+}
+
+input[type="text"], textarea, select {
+  width: 100%;
+  background: var(--achtergrond-diep);
+  border: 1.5px solid var(--rand);
+  border-radius: 12px;
+  color: var(--tekst);
+  font: inherit;
+  padding: 12px 14px;
+}
+input[type="text"]:focus, textarea:focus, select:focus {
+  outline: none;
+  border-color: var(--roze);
+}
+textarea { resize: vertical; }
+
+select {
+  appearance: none;
+  -webkit-appearance: none;
+  background-image: url("data:image/svg+xml;charset=UTF-8,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8'%3E%3Cpath d='M1 1l5 5 5-5' stroke='%23c4b3e0' stroke-width='2' fill='none'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 14px center;
+  padding-right: 36px;
+}
+
+/* Keuzeknoppen (ja / misschien / nee) */
+
+.keuzeknoppen { display: flex; gap: 8px; flex-wrap: wrap; }
+
+.keuzeknop {
+  flex: 1;
+  min-width: 90px;
+  padding: 11px 10px;
+  border-radius: 12px;
+  border: 1.5px solid var(--rand);
+  background: var(--achtergrond-diep);
+  color: var(--tekst);
+  font: inherit;
+  font-weight: 600;
+  cursor: pointer;
+  transition: transform 0.1s ease, border-color 0.15s ease, background 0.15s ease;
+}
+.keuzeknop:active { transform: scale(0.97); }
+.keuzeknop.is-gekozen {
+  border-color: var(--roze);
+  background: linear-gradient(120deg, rgba(255, 79, 163, 0.25), rgba(255, 140, 66, 0.25));
+}
+
+/* Kaartjes-teller */
+
+.teller {
+  display: flex;
+  align-items: center;
+  gap: 18px;
+  align-self: flex-start;
+}
+
+.teller__knop {
+  width: 46px;
+  height: 46px;
+  border-radius: 50%;
+  border: none;
+  background: var(--kaart-licht);
+  border: 1.5px solid var(--rand);
+  color: var(--tekst);
+  font-size: 24px;
+  font-weight: 700;
+  cursor: pointer;
+  line-height: 1;
+}
+.teller__knop:active { transform: scale(0.94); }
+
+.teller__getal {
+  font-size: 30px;
+  font-weight: 800;
+  min-width: 44px;
+  text-align: center;
+  color: var(--geel);
+}
+
+/* Verstuurknop */
+
+.verstuur {
+  border: none;
+  border-radius: 999px;
+  padding: 15px 20px;
+  font: inherit;
+  font-size: 17px;
+  font-weight: 800;
+  color: #3b0a24;
+  background: linear-gradient(100deg, var(--geel), var(--oranje) 45%, var(--roze));
+  cursor: pointer;
+  box-shadow: 0 6px 18px rgba(255, 79, 163, 0.35);
+  transition: transform 0.1s ease, opacity 0.15s ease;
+}
+.verstuur:active { transform: scale(0.98); }
+.verstuur:disabled { opacity: 0.6; cursor: default; }
+
+.formulier__uitleg {
+  font-size: 13px;
+  color: var(--tekst-zacht);
+  text-align: center;
+}
+
+/* ---------------- Overzicht: tegels ---------------- */
+
+.tegels {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 10px;
+  margin-bottom: 18px;
+}
+
+.tegel {
+  background: var(--kaart);
+  border: 1px solid var(--rand);
+  border-radius: var(--radius);
+  padding: 14px 10px;
+  text-align: center;
+}
+
+.tegel__getal { font-size: 26px; font-weight: 800; color: var(--geel); }
+.tegel__label { font-size: 12.5px; color: var(--tekst-zacht); margin-top: 2px; }
+.tegel__extra { font-size: 12px; color: var(--turkoois); margin-top: 2px; }
+
+/* ---------------- Overzicht: personen ---------------- */
+
+.groepkop {
+  font-size: 14px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--tekst-zacht);
+  margin: 20px 4px 10px;
+}
+
+.persoon {
+  background: var(--kaart);
+  border: 1px solid var(--rand);
+  border-radius: var(--radius);
+  padding: 14px 16px;
+  margin-bottom: 10px;
+}
+
+.persoon__kop {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 10px;
+}
+
+.persoon__naam { font-size: 17px; font-weight: 800; }
+
+.persoon__dagen { font-size: 13px; color: var(--turkoois); font-weight: 600; white-space: nowrap; }
+
+.badges { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 8px; }
+
+.badge {
+  font-size: 12.5px;
+  font-weight: 600;
+  padding: 4px 10px;
+  border-radius: 999px;
+  background: var(--achtergrond-diep);
+  border: 1px solid var(--rand);
+  color: var(--tekst-zacht);
+}
+.badge--goed  { color: var(--groen);  border-color: rgba(74, 222, 128, 0.4); }
+.badge--let-op{ color: var(--geel);   border-color: rgba(255, 209, 102, 0.4); }
+.badge--roze  { color: var(--roze);   border-color: rgba(255, 79, 163, 0.4); }
+
+.persoon__opmerking {
+  margin-top: 8px;
+  font-size: 13.5px;
+  color: var(--tekst-zacht);
+  font-style: italic;
+}
+
+.leeg {
+  text-align: center;
+  color: var(--tekst-zacht);
+  padding: 40px 20px;
+  font-size: 15px;
+}
+
+/* ---------------- Huisjes ---------------- */
+
+.huisje {
+  background: var(--kaart);
+  border: 1px solid var(--rand);
+  border-radius: var(--radius);
+  padding: 16px;
+  margin-bottom: 14px;
+}
+
+.huisje__kop {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  margin-bottom: 4px;
+}
+
+.huisje__naam { font-size: 18px; font-weight: 800; }
+
+.huisje__plekken { font-size: 13px; font-weight: 700; color: var(--turkoois); }
+.huisje__plekken--vol { color: var(--rood); }
+
+/* Bezetting-bolletjes onder de kop */
+.huisje__stippen { display: flex; gap: 5px; margin: 6px 0 12px; }
+.stip {
+  width: 12px; height: 12px; border-radius: 50%;
+  background: var(--achtergrond-diep);
+  border: 1.5px solid var(--rand);
+}
+.stip--bezet { background: var(--roze); border-color: var(--roze); }
+
+.bewoner {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  padding: 9px 0;
+  border-top: 1px solid var(--rand);
+}
+
+.bewoner__naam { font-weight: 700; font-size: 15px; }
+.bewoner__naam small { font-weight: 500; color: var(--tekst-zacht); }
+
+/* Mini-tijdlijn: 5 blokjes (do vr za zo ma) */
+.dagblokjes { display: flex; gap: 3px; }
+.dagblok {
+  width: 22px; height: 22px;
+  border-radius: 6px;
+  background: var(--achtergrond-diep);
+  border: 1px solid var(--rand);
+  font-size: 9.5px;
+  font-weight: 700;
+  color: var(--tekst-zacht);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.dagblok--aanwezig {
+  background: linear-gradient(120deg, var(--oranje), var(--roze));
+  border-color: transparent;
+  color: #3b0a24;
+}
+
+.huisje__leeg { color: var(--tekst-zacht); font-size: 14px; padding: 6px 0; }
+
+/* Nog in te delen */
+
+.intedelen-kaart {
+  background: rgba(255, 209, 102, 0.08);
+  border: 1.5px dashed rgba(255, 209, 102, 0.45);
+  border-radius: var(--radius);
+  padding: 16px;
+  margin-bottom: 14px;
+}
+
+/* Beheer (indelen) */
+
+.beheer-balk { text-align: center; padding: 6px 0 16px; }
+
+.beheer-knop {
+  background: none;
+  border: 1.5px solid var(--rand);
+  border-radius: 999px;
+  color: var(--tekst-zacht);
+  font: inherit;
+  font-size: 13.5px;
+  font-weight: 600;
+  padding: 9px 18px;
+  cursor: pointer;
+}
+.beheer-knop.is-actief {
+  border-color: var(--geel);
+  color: var(--geel);
+}
+
+.wijskeuze { display: flex; gap: 5px; }
+
+.wijsknop {
+  border: 1.5px solid var(--rand);
+  background: var(--achtergrond-diep);
+  color: var(--tekst);
+  border-radius: 9px;
+  font: inherit;
+  font-size: 12.5px;
+  font-weight: 700;
+  padding: 6px 9px;
+  cursor: pointer;
+}
+.wijsknop.is-gekozen {
+  border-color: var(--geel);
+  background: rgba(255, 209, 102, 0.18);
+  color: var(--geel);
+}
+
+/* ---------------- Boodschappen ---------------- */
+
+.veld__hint--waarschuwing { color: var(--geel); }
+
+.boodschap {
+  background: var(--kaart);
+  border: 1px solid var(--rand);
+  border-radius: 14px;
+  padding: 12px 16px;
+  margin-bottom: 8px;
+}
+
+.boodschap__weg { color: var(--rood); }
+
+/* ---------------- Tabbalk ---------------- */
+
+.tabbar {
+  position: fixed;
+  bottom: 0; left: 0; right: 0;
+  display: flex;
+  background: rgba(24, 11, 48, 0.92);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border-top: 1px solid var(--rand);
+  padding-bottom: env(safe-area-inset-bottom);
+  z-index: 20;
+}
+
+.tabbar__btn {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+  padding: 10px 4px 8px;
+  text-decoration: none;
+  color: var(--tekst-zacht);
+  font-size: 11.5px;
+  font-weight: 600;
+}
+
+.tabbar__btn.is-actief { color: var(--geel); }
+
+.tabbar__icoon { font-size: 21px; line-height: 1; }
