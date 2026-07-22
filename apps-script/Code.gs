@@ -21,7 +21,9 @@
    ======================================================================== */
 
 var BLADNAAM = "Antwoorden";
-var KOLOMMEN = ["Naam", "Meegaan", "Kaartjes", "WilHuisje", "Aankomst", "Vertrek", "Opmerking", "Huisje", "Bijgewerkt"];
+// Let op: Geboortedatum/Woonplaats/Legitimatie staan expres achteraan (kolom
+// J-L), zodat bestaande rijen niet verschuiven.
+var KOLOMMEN = ["Naam", "Meegaan", "Kaartjes", "WilHuisje", "Aankomst", "Vertrek", "Opmerking", "Huisje", "Bijgewerkt", "Geboortedatum", "Woonplaats", "Legitimatie"];
 
 var BOODSCHAPPEN_BLAD = "Boodschappen";
 var BOODSCHAPPEN_KOLOMMEN = ["Wat", "Wie", "Toegevoegd"];
@@ -34,7 +36,22 @@ function blad() {
     sheet.appendRow(KOLOMMEN);
     sheet.setFrozenRows(1);
   }
+  // Nieuwe kolommen (bijv. Geboortedatum) automatisch van een kopje voorzien.
+  if (!sheet.getRange(1, KOLOMMEN.length).getValue()) {
+    sheet.getRange(1, 1, 1, KOLOMMEN.length).setValues([KOLOMMEN]);
+    // Geboortedatum als tekst bewaren, anders maakt Sheets er een datum van.
+    sheet.getRange(2, 10, sheet.getMaxRows() - 1, 1).setNumberFormat("@");
+  }
   return sheet;
+}
+
+// Geboortedatum kan door Sheets als echte datum zijn opgeslagen; altijd
+// teruggeven als "dd-mm-jjjj".
+function alsTekstDatum(w) {
+  if (w instanceof Date) {
+    return Utilities.formatDate(w, "Europe/Amsterdam", "dd-MM-yyyy");
+  }
+  return String(w || "");
 }
 
 function alleRijen() {
@@ -52,7 +69,10 @@ function alleRijen() {
       aankomst: String(r[4]),
       vertrek: String(r[5]),
       opmerking: String(r[6]),
-      huisje: String(r[7])
+      huisje: String(r[7]),
+      geboortedatum: alsTekstDatum(r[9]),
+      woonplaats: String(r[10] || ""),
+      legitimatie: String(r[11] || "")
     });
   }
   return rijen;
@@ -98,6 +118,7 @@ function doPost(e) {
     if (body.action === "assign") return antwoord(verwerkIndeling(body));
     if (body.action === "addItem") return antwoord(voegItemToe(body));
     if (body.action === "removeItem") return antwoord(verwijderItem(body));
+    if (body.action === "removeEntry") return antwoord(verwijderInzending(body));
 
     return antwoord({ ok: false, error: "onbekende actie" });
   } catch (fout) {
@@ -126,6 +147,14 @@ function verwijderItem(body) {
     }
   }
   return { ok: false, error: "niet gevonden" };
+}
+
+// Hele inzending verwijderen (bijv. een testrij, of iemand die afhaakt).
+function verwijderInzending(body) {
+  var rijNr = vindRijNummer(body.naam);
+  if (rijNr < 0) return { ok: false, error: "naam niet gevonden" };
+  blad().deleteRow(rijNr);
+  return { ok: true };
 }
 
 function normNaam(naam) {
@@ -161,14 +190,26 @@ function verwerkInzending(entry) {
     String(entry.vertrek || "").slice(0, 2),
     String(entry.opmerking || "").slice(0, 300),
     huisje,
-    new Date()
+    new Date(),
+    String(entry.geboortedatum || "").slice(0, 10),
+    String(entry.woonplaats || "").slice(0, 60),
+    String(entry.legitimatie || "").slice(0, 12)
   ];
 
   if (rijNr > 0) {
     sheet.getRange(rijNr, 1, 1, rij.length).setValues([rij]);
   } else {
     sheet.appendRow(rij);
+    rijNr = sheet.getLastRow();
   }
+
+  // De geboortedatum nogmaals nadrukkelijk als tekst wegschrijven. Doen we
+  // dat niet, dan leest Sheets "05-11-1988" soms op z'n Amerikaans (11 mei
+  // in plaats van 5 november) en draaien dag en maand stiekem om.
+  var gebCel = sheet.getRange(rijNr, 10);
+  gebCel.setNumberFormat("@");
+  gebCel.setValue(rij[9]);
+
   return { ok: true };
 }
 

@@ -63,6 +63,34 @@
             </div>
           </div>
 
+          <!-- Extra gegevens voor de check-in van de huisjes (EuroParcs) -->
+          <div id="blok-huisje-gegevens" hidden>
+            <p class="checkin-uitleg">🏠 Voor de check-in van de huisjes vragen we ook even:</p>
+
+            <div class="veld">
+              <span class="veld__label">Geboortedatum</span>
+              <div class="datum">
+                <select id="f-gebdag"><option value="">dag</option></select>
+                <select id="f-gebmaand"><option value="">maand</option></select>
+                <select id="f-gebjaar"><option value="">jaar</option></select>
+              </div>
+            </div>
+
+            <label class="veld">
+              <span class="veld__label">Woonplaats</span>
+              <input type="text" id="f-woonplaats" maxlength="60" placeholder="bijv. Heemstede">
+            </label>
+
+            <div class="veld">
+              <span class="veld__label">Waarmee kun je je legitimeren?</span>
+              <div class="keuzeknoppen" id="f-legitimatie" role="radiogroup">
+                <button type="button" class="keuzeknop" data-waarde="id">🪪 ID-kaart</button>
+                <button type="button" class="keuzeknop" data-waarde="paspoort">📕 Paspoort</button>
+                <button type="button" class="keuzeknop" data-waarde="rijbewijs">🚗 Rijbewijs</button>
+              </div>
+            </div>
+          </div>
+
           <div class="veld veld--half">
             <label>
               <span class="veld__label">Ik kom op</span>
@@ -101,6 +129,16 @@
       </div>
     </section>
 
+    <!-- ============ Tab: Programma ============ -->
+    <section id="tab-programma" class="tab" hidden>
+      <div class="dagkiezer" id="dagkiezer"></div>
+      <div class="programma-balk">
+        <input type="search" id="p-zoek" placeholder="Zoek artiest of podium…">
+        <button type="button" id="p-hartjes" class="hartjes-filter" aria-label="alleen favorieten">❤️</button>
+      </div>
+      <div id="programmalijst"></div>
+    </section>
+
     <!-- ============ Tab: Boodschappen ============ -->
     <section id="tab-boodschappen" class="tab" hidden>
       <form id="boodschap-formulier" class="kaart formulier" autocomplete="off">
@@ -129,10 +167,13 @@
       <span class="tabbar__icoon">✍️</span><span class="tabbar__tekst">Invullen</span>
     </a>
     <a class="tabbar__btn" data-tab="overzicht" href="#overzicht">
-      <span class="tabbar__icoon">👥</span><span class="tabbar__tekst">Wie gaat mee</span>
+      <span class="tabbar__icoon">👥</span><span class="tabbar__tekst">Wie mee</span>
     </a>
     <a class="tabbar__btn" data-tab="huisjes" href="#huisjes">
       <span class="tabbar__icoon">🏠</span><span class="tabbar__tekst">Huisjes</span>
+    </a>
+    <a class="tabbar__btn" data-tab="programma" href="#programma">
+      <span class="tabbar__icoon">📅</span><span class="tabbar__tekst">Programma</span>
     </a>
     <a class="tabbar__btn" data-tab="boodschappen" href="#boodschappen">
       <span class="tabbar__icoon">🛒</span><span class="tabbar__tekst">Meenemen</span>
@@ -148,6 +189,7 @@
       });
     }
   </script>
+  <script src="lineup.js"></script>
   <script src="app.js"></script>
 </body>
 </html>

@@ -59,7 +59,7 @@ var demoBoodschappen = [
   { wat: "Slingers en lampjes", wie: "Loes" }
 ];
 var demoRows = [
-  { naam: "Serge", meegaan: "ja", kaartjes: 2, wilHuisje: "ja", aankomst: "do", vertrek: "ma", opmerking: "Ik heb een kaartje over!", huisje: "1" },
+  { naam: "Serge", meegaan: "ja", kaartjes: 2, wilHuisje: "ja", aankomst: "do", vertrek: "ma", opmerking: "Ik heb een kaartje over!", huisje: "1", geboortedatum: "12-03-1978", woonplaats: "Amsterdam", legitimatie: "paspoort" },
   { naam: "Ariana", meegaan: "ja", kaartjes: 1, wilHuisje: "ja", aankomst: "do", vertrek: "ma", opmerking: "", huisje: "1" },
   { naam: "Pim", meegaan: "ja", kaartjes: 0, wilHuisje: "ja", aankomst: "vr", vertrek: "zo", opmerking: "Kom met de trein", huisje: "" },
   { naam: "Loes", meegaan: "misschien", kaartjes: 0, wilHuisje: "ja", aankomst: "za", vertrek: "zo", opmerking: "Hoor het vrijdag pas van werk", huisje: "" },
@@ -138,7 +138,7 @@ function stuurOp(payload) {
 
 /* ---------------- Tabs ---------------- */
 
-var TABS = ["invullen", "overzicht", "huisjes", "boodschappen"];
+var TABS = ["invullen", "overzicht", "huisjes", "programma", "boodschappen"];
 
 function toonTab(naam) {
   if (TABS.indexOf(naam) < 0) naam = "invullen";
@@ -149,7 +149,7 @@ function toonTab(naam) {
     btn.classList.toggle("is-actief", btn.dataset.tab === naam);
   });
   window.scrollTo(0, 0);
-  if (naam !== "invullen") {
+  if (naam === "overzicht" || naam === "huisjes" || naam === "boodschappen") {
     haalLijst().then(renderAlles).catch(laadFout);
   }
 }
@@ -198,6 +198,14 @@ function zetKaartjes(n) {
 function toonVerblijfBlok() {
   var meegaan = keuzeVan($("#f-meegaan"));
   $("#blok-verblijf").style.display = (meegaan === "nee") ? "none" : "";
+  toonHuisjeGegevens();
+}
+
+// De check-in-velden (geboortedatum, woonplaats, legitimatie) alleen tonen
+// als iemand in een huisje wil slapen.
+function toonHuisjeGegevens() {
+  var wil = keuzeVan($("#f-huisje"));
+  $("#blok-huisje-gegevens").hidden = (wil !== "ja");
 }
 
 function vulFormulierMet(row) {
@@ -207,6 +215,15 @@ function vulFormulierMet(row) {
   if (row.aankomst) $("#f-aankomst").value = row.aankomst;
   if (row.vertrek) $("#f-vertrek").value = row.vertrek;
   $("#f-opmerking").value = row.opmerking || "";
+
+  // Check-in-gegevens (geboortedatum als "dd-mm-jjjj").
+  var geb = String(row.geboortedatum || "").split("-");
+  $("#f-gebdag").value = geb.length === 3 ? String(parseInt(geb[0], 10)) : "";
+  $("#f-gebmaand").value = geb.length === 3 ? String(parseInt(geb[1], 10)) : "";
+  $("#f-gebjaar").value = geb.length === 3 ? geb[2] : "";
+  $("#f-woonplaats").value = row.woonplaats || "";
+  kiesIn($("#f-legitimatie"), row.legitimatie || "");
+
   toonVerblijfBlok();
 }
 
@@ -242,6 +259,19 @@ function initFormulier() {
   $("#f-aankomst").value = "do";
   $("#f-vertrek").value = "ma";
 
+  // Geboortedatum-keuzes vullen (dag 1-31, maand, jaar).
+  var MAANDEN = ["januari", "februari", "maart", "april", "mei", "juni",
+                 "juli", "augustus", "september", "oktober", "november", "december"];
+  for (var d = 1; d <= 31; d++) {
+    $("#f-gebdag").insertAdjacentHTML("beforeend", '<option value="' + d + '">' + d + "</option>");
+  }
+  MAANDEN.forEach(function (m, i) {
+    $("#f-gebmaand").insertAdjacentHTML("beforeend", '<option value="' + (i + 1) + '">' + m + "</option>");
+  });
+  for (var j = 2010; j >= 1935; j--) {
+    $("#f-gebjaar").insertAdjacentHTML("beforeend", '<option value="' + j + '">' + j + "</option>");
+  }
+
   // Keuzeknoppen.
   document.querySelectorAll(".keuzeknoppen").forEach(function (groep) {
     groep.addEventListener("click", function (ev) {
@@ -249,6 +279,7 @@ function initFormulier() {
       if (!knop) return;
       kiesIn(groep, knop.dataset.waarde);
       if (groep.id === "f-meegaan") toonVerblijfBlok();
+      if (groep.id === "f-huisje") toonHuisjeGegevens();
     });
   });
 
@@ -271,6 +302,12 @@ function verstuurFormulier(ev) {
   if (!naam) { toast("Vul eerst je naam in 🙂"); return; }
   if (!meegaan) { toast("Kies of je meegaat 🙂"); return; }
 
+  // Geboortedatum samenstellen als "dd-mm-jjjj" (alleen als alles gekozen is).
+  var gd = $("#f-gebdag").value, gm = $("#f-gebmaand").value, gj = $("#f-gebjaar").value;
+  var geboortedatum = (gd && gm && gj)
+    ? ("0" + gd).slice(-2) + "-" + ("0" + gm).slice(-2) + "-" + gj
+    : "";
+
   var entry = {
     naam: naam,
     meegaan: meegaan,
@@ -278,12 +315,23 @@ function verstuurFormulier(ev) {
     wilHuisje: meegaan === "nee" ? "" : keuzeVan($("#f-huisje")),
     aankomst: meegaan === "nee" ? "" : $("#f-aankomst").value,
     vertrek: meegaan === "nee" ? "" : $("#f-vertrek").value,
-    opmerking: $("#f-opmerking").value.trim()
+    opmerking: $("#f-opmerking").value.trim(),
+    geboortedatum: geboortedatum,
+    woonplaats: $("#f-woonplaats").value.trim(),
+    legitimatie: keuzeVan($("#f-legitimatie"))
   };
 
   if (entry.aankomst && dagIndex(entry.vertrek) < dagIndex(entry.aankomst)) {
     toast("Je vertrek is eerder dan je aankomst 🤔");
     return;
+  }
+
+  // Wie in een huisje wil, moet de check-in-gegevens invullen (nodig voor
+  // de registratie bij het park).
+  if (entry.meegaan !== "nee" && entry.wilHuisje === "ja") {
+    if (!geboortedatum) { toast("Vul je geboortedatum nog even in 🙂"); return; }
+    if (!entry.woonplaats) { toast("Vul je woonplaats nog even in 🙂"); return; }
+    if (!entry.legitimatie) { toast("Kies nog hoe je je kunt legitimeren 🙂"); return; }
   }
 
   var knop = $("#verstuurknop");
@@ -318,6 +366,17 @@ function kaartjesBadge(row) {
   return '<span class="badge badge--goed">🎫 ' + n + (n === 1 ? " kaartje" : " kaartjes") + "</span>";
 }
 
+// Zijn de check-in-gegevens (voor het park) compleet?
+function gegevensCompleet(row) {
+  return !!(row.geboortedatum && row.woonplaats && row.legitimatie);
+}
+
+function checkinBadge(row) {
+  if (row.meegaan === "nee" || row.wilHuisje !== "ja") return "";
+  if (gegevensCompleet(row)) return '<span class="badge badge--goed">🪪 check-in compleet</span>';
+  return '<span class="badge badge--let-op">🪪 check-in gegevens ontbreken</span>';
+}
+
 function huisjeBadge(row) {
   if (row.meegaan === "nee") return "";
   if (row.wilHuisje === "nee") return '<span class="badge">⛺ regelt zelf iets</span>';
@@ -336,7 +395,7 @@ function persoonKaart(row) {
       '<span class="persoon__naam">' + esc(row.naam) + "</span>" +
       (dagen ? '<span class="persoon__dagen">📅 ' + dagen + "</span>" : "") +
     "</div>" +
-    '<div class="badges">' + kaartjesBadge(row) + huisjeBadge(row) + "</div>" +
+    '<div class="badges">' + kaartjesBadge(row) + huisjeBadge(row) + checkinBadge(row) + "</div>" +
     (row.opmerking ? '<p class="persoon__opmerking">💬 ' + esc(row.opmerking) + "</p>" : "") +
   "</div>";
 }
@@ -410,6 +469,7 @@ function wijsKeuze(row) {
 
 function bewonerRij(row) {
   var sub = row.meegaan === "misschien" ? " <small>(misschien)</small>" : "";
+  if (!gegevensCompleet(row)) sub += ' <small title="check-in gegevens ontbreken">⚠️</small>';
   return '<div class="bewoner">' +
     '<span class="bewoner__naam">' + esc(row.naam) + sub + "</span>" +
     (beheer ? wijsKeuze(row) : dagBlokjes(row)) +
@@ -611,6 +671,126 @@ function initBoodschappen() {
   });
 }
 
+/* ---------------- Programma (line-up per dag) ---------------- */
+
+var PROGRAMMA_DAGEN = [
+  { id: "do", label: "do 23" },
+  { id: "vr", label: "vr 24" },
+  { id: "za", label: "za 25" },
+  { id: "zo", label: "zo 26" }
+];
+
+var programmaDag = "do";
+var alleenHartjes = false;
+
+// Favorieten blijven op je eigen telefoon bewaard.
+function leesHartjes() {
+  try { return JSON.parse(localStorage.getItem("lj_hartjes") || "[]"); }
+  catch (e) { return []; }
+}
+
+function actKey(dag, act) { return dag + "|" + act.tijd + "|" + act.naam; }
+
+function isHartje(dag, act) { return leesHartjes().indexOf(actKey(dag, act)) >= 0; }
+
+function wisselHartje(dag, act) {
+  var lijst = leesHartjes();
+  var key = actKey(dag, act);
+  var i = lijst.indexOf(key);
+  if (i >= 0) lijst.splice(i, 1); else lijst.push(key);
+  try { localStorage.setItem("lj_hartjes", JSON.stringify(lijst)); } catch (e) {}
+}
+
+// Nachtelijke tijden (t/m 05:00) sorteren ná de avond.
+function tijdSleutel(tijd) {
+  var delen = tijd.split(":");
+  var minuten = parseInt(delen[0], 10) * 60 + parseInt(delen[1], 10);
+  if (minuten < 300) minuten += 1440;
+  return minuten;
+}
+
+function renderProgramma() {
+  // Dag-knopjes.
+  $("#dagkiezer").innerHTML = PROGRAMMA_DAGEN.map(function (d) {
+    return '<button type="button" class="dagknop' +
+      (d.id === programmaDag ? " is-gekozen" : "") + '" data-dag="' + d.id + '">' +
+      d.label + "</button>";
+  }).join("");
+
+  var acts = (LINEUP[programmaDag] || []).slice().sort(function (a, b) {
+    return tijdSleutel(a.tijd) - tijdSleutel(b.tijd) || a.naam.localeCompare(b.naam, "nl");
+  });
+
+  var zoek = normItem($("#p-zoek").value);
+  if (zoek) {
+    acts = acts.filter(function (a) {
+      return normItem(a.naam).indexOf(zoek) >= 0 || normItem(a.podium).indexOf(zoek) >= 0;
+    });
+  }
+  if (alleenHartjes) {
+    acts = acts.filter(function (a) { return isHartje(programmaDag, a); });
+  }
+
+  $("#p-hartjes").classList.toggle("is-actief", alleenHartjes);
+
+  if (!LINEUP[programmaDag] || !LINEUP[programmaDag].length) {
+    $("#programmalijst").innerHTML =
+      '<div class="leeg">Het programma van deze dag staat er nog niet in.<br>Komt eraan! 🎪</div>';
+    return;
+  }
+  if (!acts.length) {
+    $("#programmalijst").innerHTML =
+      '<div class="leeg">' + (alleenHartjes ? "Nog geen favorieten voor deze dag.<br>Tik op een hartje bij een optreden! ❤️"
+                                            : "Niets gevonden voor deze zoekopdracht. 🤷") + "</div>";
+    return;
+  }
+
+  // Groeperen per tijd.
+  var html = "", vorigeTijd = null;
+  acts.forEach(function (a) {
+    if (a.tijd !== vorigeTijd) {
+      html += '<h2 class="groepkop">🕐 ' + esc(a.tijd) + "</h2>";
+      vorigeTijd = a.tijd;
+    }
+    var vol = isHartje(programmaDag, a);
+    html += '<div class="act">' +
+      '<div class="act__info">' +
+        '<span class="act__naam">' + esc(a.naam) + "</span>" +
+        '<span class="act__podium">' + esc(a.podium) + "</span>" +
+      "</div>" +
+      '<button type="button" class="act__hart' + (vol ? " is-vol" : "") +
+        '" data-tijd="' + esc(a.tijd) + '" data-naam="' + esc(a.naam) + '">' +
+        (vol ? "❤️" : "♡") + "</button>" +
+    "</div>";
+  });
+  $("#programmalijst").innerHTML = html;
+}
+
+function initProgramma() {
+  $("#dagkiezer").addEventListener("click", function (ev) {
+    var knop = ev.target.closest(".dagknop");
+    if (!knop) return;
+    programmaDag = knop.dataset.dag;
+    renderProgramma();
+  });
+
+  $("#p-zoek").addEventListener("input", renderProgramma);
+
+  $("#p-hartjes").addEventListener("click", function () {
+    alleenHartjes = !alleenHartjes;
+    renderProgramma();
+  });
+
+  $("#programmalijst").addEventListener("click", function (ev) {
+    var hart = ev.target.closest(".act__hart");
+    if (!hart) return;
+    wisselHartje(programmaDag, { tijd: hart.dataset.tijd, naam: hart.dataset.naam });
+    renderProgramma();
+  });
+
+  renderProgramma();
+}
+
 /* ---------------- Alles ---------------- */
 
 function renderAlles() {
@@ -636,6 +816,7 @@ function init() {
   initFormulier();
   initHuisjes();
   initBoodschappen();
+  initProgramma();
   toonTab(location.hash.replace("#", ""));
 
   // Naam van de vorige keer alvast invullen.
