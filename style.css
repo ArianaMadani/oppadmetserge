@@ -212,6 +212,8 @@ select {
 }
 
 #blok-huisje-gegevens { display: flex; flex-direction: column; gap: 20px; margin-top: 16px; }
+/* Nodig omdat de flex-regel hierboven anders wint van het hidden-attribuut. */
+#blok-huisje-gegevens[hidden] { display: none; }
 
 .datum { display: flex; gap: 8px; }
 .datum select { width: auto; flex: 1; min-width: 0; }
@@ -337,6 +339,16 @@ select {
 .badge--goed  { color: var(--groen);  border-color: rgba(74, 222, 128, 0.4); }
 .badge--let-op{ color: var(--geel);   border-color: rgba(255, 209, 102, 0.4); }
 .badge--roze  { color: var(--roze);   border-color: rgba(255, 79, 163, 0.4); }
+
+/* Klikbare badge ("gegevens invullen →") */
+.badge--klik {
+  font: inherit;
+  font-size: 12.5px;
+  font-weight: 700;
+  cursor: pointer;
+  background: rgba(255, 209, 102, 0.16);
+}
+.badge--klik:active { transform: scale(0.96); }
 
 .persoon__opmerking {
   margin-top: 8px;
@@ -559,6 +571,127 @@ select {
   padding: 8px 12px;
 }
 .act__hart.is-vol { color: var(--roze); }
+
+/* ---------------- Blokkenschema ---------------- */
+
+.schema__hint {
+  font-size: 12.5px;
+  color: var(--tekst-zacht);
+  text-align: center;
+  margin-bottom: 8px;
+}
+
+.schema {
+  overflow: auto;
+  max-height: 74vh;
+  border: 1px solid var(--rand);
+  border-radius: var(--radius);
+  background: var(--achtergrond-diep);
+  -webkit-overflow-scrolling: touch;
+}
+
+.schema__binnen { display: inline-flex; align-items: flex-start; min-width: 100%; }
+
+/* Linkerkolom met uurtijden (blijft staan bij opzij vegen) */
+.schema__tijden {
+  position: sticky;
+  left: 0;
+  z-index: 3;
+  width: 50px;
+  flex: none;
+  background: var(--achtergrond-diep);
+  border-right: 1px solid var(--rand);
+}
+
+.schema__hoek {
+  position: sticky;
+  top: 0;
+  z-index: 4;
+  height: 54px;
+  background: var(--kaart);
+  border-bottom: 1px solid var(--rand);
+}
+
+.schema__uren { position: relative; }
+
+.schema__uur {
+  position: absolute;
+  right: 6px;
+  transform: translateY(-50%);
+  font-size: 11px;
+  font-weight: 700;
+  color: var(--tekst-zacht);
+}
+
+/* Eén kolom per podium */
+.schema__kolom { width: 140px; flex: none; border-right: 1px solid var(--rand); }
+
+.schema__podium {
+  position: sticky;
+  top: 0;
+  z-index: 2;
+  height: 54px;
+  padding: 5px 8px;
+  display: flex;
+  align-items: center;
+  font-size: 11.5px;
+  font-weight: 700;
+  line-height: 1.2;
+  overflow: hidden;
+  background: var(--kaart);
+  border-bottom: 1px solid var(--rand);
+}
+
+.schema__vak {
+  position: relative;
+  /* elk uur een dun lijntje (108px = 60 min x 1.8 px) */
+  background-image: repeating-linear-gradient(to bottom,
+    rgba(255, 255, 255, 0.07) 0 1px, transparent 1px 108px);
+}
+
+.blok {
+  position: absolute;
+  left: 3px;
+  right: 3px;
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-start;
+  align-items: stretch;
+  border: none;
+  border-radius: 8px;
+  padding: 4px 6px;
+  text-align: left;
+  overflow: hidden;
+  cursor: pointer;
+  font: inherit;
+  color: #3b0a24;
+  background: linear-gradient(140deg, rgba(255, 140, 66, 0.92), rgba(255, 79, 163, 0.92));
+}
+
+.blok--vol { box-shadow: inset 0 0 0 2.5px var(--geel); }
+.blok--dim { opacity: 0.22; }
+
+.blok__tijd { display: block; font-size: 10.5px; font-weight: 800; }
+.blok__naam { display: block; font-size: 11.5px; font-weight: 600; line-height: 1.25; }
+
+/* Dun streepje tussen namen in een gecombineerd blok */
+.blok__scheiding {
+  display: block;
+  height: 1px;
+  margin: 3px 0;
+  background: rgba(59, 10, 36, 0.25);
+}
+
+/* Rode "nu"-lijn tijdens het festival */
+.schema__nu {
+  position: absolute;
+  left: 0;
+  right: 0;
+  height: 2px;
+  background: var(--rood);
+  z-index: 1;
+  box-shadow: 0 0 6px var(--rood);
+}
 
 /* ---------------- Tabbalk ---------------- */
 

@@ -374,7 +374,9 @@ function gegevensCompleet(row) {
 function checkinBadge(row) {
   if (row.meegaan === "nee" || row.wilHuisje !== "ja") return "";
   if (gegevensCompleet(row)) return '<span class="badge badge--goed">🪪 check-in compleet</span>';
-  return '<span class="badge badge--let-op">🪪 check-in gegevens ontbreken</span>';
+  // Klikbaar: tik erop en je springt naar het invulformulier van deze persoon.
+  return '<button type="button" class="badge badge--let-op badge--klik" data-naam="' +
+         esc(row.naam) + '">🪪 gegevens invullen →</button>';
 }
 
 function huisjeBadge(row) {
@@ -398,6 +400,22 @@ function persoonKaart(row) {
     '<div class="badges">' + kaartjesBadge(row) + huisjeBadge(row) + checkinBadge(row) + "</div>" +
     (row.opmerking ? '<p class="persoon__opmerking">💬 ' + esc(row.opmerking) + "</p>" : "") +
   "</div>";
+}
+
+// Tik op "🪪 gegevens invullen" bij iemand: spring naar het formulier met
+// die naam alvast ingevuld, en scroll naar de check-in-velden.
+function initCheckinKnoppen() {
+  $("#mensenlijst").addEventListener("click", function (ev) {
+    var knop = ev.target.closest(".badge--klik");
+    if (!knop) return;
+    $("#f-naam").value = knop.dataset.naam;
+    naamGewijzigd();
+    location.hash = "#invullen";
+    setTimeout(function () {
+      var blok = $("#blok-huisje-gegevens");
+      if (!blok.hidden) blok.scrollIntoView({ behavior: "smooth", block: "center" });
+    }, 150);
+  });
 }
 
 function renderOverzicht() {
@@ -683,6 +701,12 @@ var PROGRAMMA_DAGEN = [
 var programmaDag = "do";
 var alleenHartjes = false;
 
+// Weergave: "blokken" (blokkenschema) of "lijst". Keuze wordt onthouden.
+var programmaWeergave = (function () {
+  try { return localStorage.getItem("lj_weergave") || "blokken"; }
+  catch (e) { return "blokken"; }
+})();
+
 // Favorieten blijven op je eigen telefoon bewaard.
 function leesHartjes() {
   try { return JSON.parse(localStorage.getItem("lj_hartjes") || "[]"); }
@@ -732,10 +756,17 @@ function renderProgramma() {
   }
 
   $("#p-hartjes").classList.toggle("is-actief", alleenHartjes);
+  $("#p-weergave").textContent = programmaWeergave === "blokken" ? "📋" : "🧱";
+  $("#p-weergave").title = programmaWeergave === "blokken" ? "toon als lijst" : "toon als blokkenschema";
 
   if (!LINEUP[programmaDag] || !LINEUP[programmaDag].length) {
     $("#programmalijst").innerHTML =
       '<div class="leeg">Het programma van deze dag staat er nog niet in.<br>Komt eraan! 🎪</div>';
+    return;
+  }
+
+  if (programmaWeergave === "blokken") {
+    renderBlokkenschema();
     return;
   }
   if (!acts.length) {
@@ -766,6 +797,109 @@ function renderProgramma() {
   $("#programmalijst").innerHTML = html;
 }
 
+/* ---------------- Blokkenschema ---------------- */
+
+var SCHAAL = 1.8; // pixels per minuut (108 px per uur)
+
+// Rode "nu"-lijn: alleen op de festivaldag zelf (nacht tot 05:00 hoort bij
+// de vorige dag, net als in de rest van de app).
+function nuMinuten() {
+  var dagDatum = { do: 23, vr: 24, za: 25, zo: 26 };
+  var n = new Date();
+  if (n.getFullYear() !== 2026 || n.getMonth() !== 6) return null;
+  var m = n.getHours() * 60 + n.getMinutes();
+  var datum = n.getDate();
+  if (m < 300) { datum -= 1; m += 1440; }
+  if (datum !== dagDatum[programmaDag]) return null;
+  return m;
+}
+
+function renderBlokkenschema() {
+  var alle = LINEUP[programmaDag].slice().sort(function (a, b) {
+    return tijdSleutel(a.tijd) - tijdSleutel(b.tijd) || a.naam.localeCompare(b.naam, "nl");
+  });
+  var zoek = normItem($("#p-zoek").value);
+
+  // Podia geordend op drukte (meeste optredens eerst).
+  var telling = {};
+  alle.forEach(function (a) { telling[a.podium] = (telling[a.podium] || 0) + 1; });
+  var podia = Object.keys(telling).sort(function (a, b) {
+    return telling[b] - telling[a] || a.localeCompare(b, "nl");
+  });
+
+  // De tijd-as: van het eerste hele uur tot een uur na de laatste act.
+  var minM = Infinity, maxM = 0;
+  alle.forEach(function (a) {
+    var m = tijdSleutel(a.tijd);
+    if (m < minM) minM = m;
+    if (m > maxM) maxM = m;
+  });
+  var start = Math.floor(minM / 60) * 60;
+  var eind = Math.ceil((maxM + 60) / 60) * 60;
+  var hoogte = (eind - start) * SCHAAL;
+
+  var nu = nuMinuten();
+  var nuLijn = (nu !== null && nu >= start && nu <= eind)
+    ? '<div class="schema__nu" style="top:' + Math.round((nu - start) * SCHAAL) + 'px"></div>'
+    : "";
+
+  // Linkerkolom met uurtijden. Het allereerste label niet half boven de
+  // rand laten uitsteken.
+  var uren = "";
+  for (var m = start; m <= eind; m += 60) {
+    var stijl = (m === start)
+      ? "top:2px;transform:none"
+      : "top:" + ((m - start) * SCHAAL) + "px";
+    uren += '<div class="schema__uur" style="' + stijl + '">' +
+      ("0" + Math.floor((m % 1440) / 60)).slice(-2) + ":00</div>";
+  }
+
+  // Eén kolom per podium. Meerdere dingen op dezelfde tijd op hetzelfde
+  // podium worden één gecombineerd blok, anders vallen ze over elkaar heen.
+  var kolommen = podia.map(function (p) {
+    var acts = alle.filter(function (a) { return a.podium === p; });
+
+    var groepen = [];
+    acts.forEach(function (a) {
+      var laatste = groepen[groepen.length - 1];
+      if (laatste && laatste.tijd === a.tijd) laatste.acts.push(a);
+      else groepen.push({ tijd: a.tijd, acts: [a] });
+    });
+
+    var blokken = groepen.map(function (g, i) {
+      var van = tijdSleutel(g.tijd);
+      var tot = (i + 1 < groepen.length) ? tijdSleutel(groepen[i + 1].tijd) : van + 60;
+      var duur = Math.max(30, Math.min(120, tot - van));
+      var vol = g.acts.some(function (a) { return isHartje(programmaDag, a); });
+      var dim = (zoek && !g.acts.some(function (a) {
+                  return normItem(a.naam).indexOf(zoek) >= 0 || normItem(a.podium).indexOf(zoek) >= 0;
+                })) || (alleenHartjes && !vol);
+      var soloNaam = g.acts.length === 1 ? ' data-naam="' + esc(g.acts[0].naam) + '"' : "";
+      return '<button type="button" class="blok' + (vol ? " blok--vol" : "") + (dim ? " blok--dim" : "") +
+        '" style="top:' + ((van - start) * SCHAAL) + "px;height:" + (duur * SCHAAL - 4) +
+        'px" data-tijd="' + esc(g.tijd) + '"' + soloNaam + ">" +
+        '<span class="blok__tijd">' + esc(g.tijd) + (vol ? " ❤️" : "") + "</span>" +
+        g.acts.map(function (a) {
+          return '<span class="blok__naam">' + esc(a.naam) + "</span>";
+        }).join('<span class="blok__scheiding"></span>') +
+      "</button>";
+    }).join("");
+
+    return '<div class="schema__kolom">' +
+      '<div class="schema__podium">' + esc(p) + "</div>" +
+      '<div class="schema__vak" style="height:' + hoogte + 'px">' + nuLijn + blokken + "</div>" +
+    "</div>";
+  }).join("");
+
+  $("#programmalijst").innerHTML =
+    '<p class="schema__hint">Veeg opzij voor meer podia · tik op een blok voor een ❤️</p>' +
+    '<div class="schema"><div class="schema__binnen">' +
+      '<div class="schema__tijden"><div class="schema__hoek"></div>' +
+        '<div class="schema__uren" style="height:' + hoogte + 'px">' + nuLijn + uren + "</div></div>" +
+      kolommen +
+    "</div></div>";
+}
+
 function initProgramma() {
   $("#dagkiezer").addEventListener("click", function (ev) {
     var knop = ev.target.closest(".dagknop");
@@ -781,9 +915,20 @@ function initProgramma() {
     renderProgramma();
   });
 
+  $("#p-weergave").addEventListener("click", function () {
+    programmaWeergave = programmaWeergave === "blokken" ? "lijst" : "blokken";
+    try { localStorage.setItem("lj_weergave", programmaWeergave); } catch (e) {}
+    renderProgramma();
+  });
+
   $("#programmalijst").addEventListener("click", function (ev) {
-    var hart = ev.target.closest(".act__hart");
+    var hart = ev.target.closest(".act__hart") || ev.target.closest(".blok");
     if (!hart) return;
+    if (!hart.dataset.naam) {
+      // Gecombineerd blok met meerdere activiteiten: hartjes gaan per stuk.
+      toast("Hier is van alles tegelijk — zet hartjes via de 📋 lijstweergave");
+      return;
+    }
     wisselHartje(programmaDag, { tijd: hart.dataset.tijd, naam: hart.dataset.naam });
     renderProgramma();
   });
@@ -816,6 +961,7 @@ function init() {
   initFormulier();
   initHuisjes();
   initBoodschappen();
+  initCheckinKnoppen();
   initProgramma();
   toonTab(location.hash.replace("#", ""));
 
