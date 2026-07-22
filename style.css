@@ -590,76 +590,81 @@ select {
   -webkit-overflow-scrolling: touch;
 }
 
-.schema__binnen { display: inline-flex; align-items: flex-start; min-width: 100%; }
+.schema__binnen { position: relative; }
 
-/* Linkerkolom met uurtijden (blijft staan bij opzij vegen) */
-.schema__tijden {
+/* Kopregel met uurtijden (blijft staan bij omlaag scrollen) */
+.hkop {
+  position: sticky;
+  top: 0;
+  z-index: 4;
+  height: 30px;
+  background: var(--kaart);
+  border-bottom: 1px solid var(--rand);
+}
+
+.hkop__hoek {
   position: sticky;
   left: 0;
-  z-index: 3;
-  width: 50px;
-  flex: none;
+  z-index: 5;
+  width: 112px;
+  height: 100%;
+  background: var(--kaart);
+  border-right: 1px solid var(--rand);
+}
+
+.hkop__uur {
+  position: absolute;
+  top: 0;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  padding-left: 5px;
+  font-size: 11px;
+  font-weight: 700;
+  color: var(--tekst-zacht);
+  border-left: 1px solid var(--rand);
+}
+
+/* Eén rij per podium; het label links blijft staan bij opzij vegen */
+.hrij {
+  position: relative;
+  height: 52px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.07);
+  /* elk uur een dun lijntje (132px = 60 min x 2.2 px) */
+  background-image: repeating-linear-gradient(to right,
+    rgba(255, 255, 255, 0.05) 0 1px, transparent 1px 132px);
+  background-position: 112px 0;
+}
+
+.hrij__label {
+  position: sticky;
+  left: 0;
+  z-index: 2;
+  width: 112px;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  padding: 3px 8px;
+  font-size: 10.5px;
+  font-weight: 700;
+  line-height: 1.15;
+  overflow: hidden;
   background: var(--achtergrond-diep);
   border-right: 1px solid var(--rand);
 }
 
-.schema__hoek {
-  position: sticky;
-  top: 0;
-  z-index: 4;
-  height: 54px;
-  background: var(--kaart);
-  border-bottom: 1px solid var(--rand);
-}
-
-.schema__uren { position: relative; }
-
-.schema__uur {
-  position: absolute;
-  right: 6px;
-  transform: translateY(-50%);
-  font-size: 11px;
-  font-weight: 700;
-  color: var(--tekst-zacht);
-}
-
-/* Eén kolom per podium */
-.schema__kolom { width: 140px; flex: none; border-right: 1px solid var(--rand); }
-
-.schema__podium {
-  position: sticky;
-  top: 0;
-  z-index: 2;
-  height: 54px;
-  padding: 5px 8px;
-  display: flex;
-  align-items: center;
-  font-size: 11.5px;
-  font-weight: 700;
-  line-height: 1.2;
-  overflow: hidden;
-  background: var(--kaart);
-  border-bottom: 1px solid var(--rand);
-}
-
-.schema__vak {
-  position: relative;
-  /* elk uur een dun lijntje (108px = 60 min x 1.8 px) */
-  background-image: repeating-linear-gradient(to bottom,
-    rgba(255, 255, 255, 0.07) 0 1px, transparent 1px 108px);
-}
-
 .blok {
   position: absolute;
-  left: 3px;
-  right: 3px;
+  top: 3px;
+  height: 46px;
   display: flex;
   flex-direction: column;
-  justify-content: flex-start;
+  justify-content: center;
   align-items: stretch;
+  gap: 1px;
   border: none;
   border-radius: 8px;
-  padding: 4px 6px;
+  padding: 3px 7px;
   text-align: left;
   overflow: hidden;
   cursor: pointer;
@@ -671,27 +676,74 @@ select {
 .blok--vol { box-shadow: inset 0 0 0 2.5px var(--geel); }
 .blok--dim { opacity: 0.22; }
 
-.blok__tijd { display: block; font-size: 10.5px; font-weight: 800; }
-.blok__naam { display: block; font-size: 11.5px; font-weight: 600; line-height: 1.25; }
-
-/* Dun streepje tussen namen in een gecombineerd blok */
-.blok__scheiding {
-  display: block;
-  height: 1px;
-  margin: 3px 0;
-  background: rgba(59, 10, 36, 0.25);
+.blok__tijd { display: block; font-size: 10px; font-weight: 800; }
+.blok__naam {
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+  overflow: hidden;
+  font-size: 11px;
+  font-weight: 700;
+  line-height: 1.2;
 }
 
 /* Rode "nu"-lijn tijdens het festival */
 .schema__nu {
   position: absolute;
-  left: 0;
-  right: 0;
-  height: 2px;
+  top: 0;
+  bottom: 0;
+  width: 2px;
   background: var(--rood);
-  z-index: 1;
+  z-index: 3;
   box-shadow: 0 0 6px var(--rood);
 }
+
+/* ---------------- Paklijst ---------------- */
+
+.paklijst {
+  background: var(--kaart);
+  border: 1px solid var(--rand);
+  border-radius: var(--radius);
+  padding: 16px;
+  margin: 18px 0;
+}
+
+.paklijst__kop {
+  cursor: pointer;
+  font-size: 16px;
+  font-weight: 800;
+}
+.paklijst__kop small { font-weight: 500; color: var(--tekst-zacht); }
+
+.paklijst__uitleg { font-size: 13px; color: var(--tekst-zacht); margin-top: 10px; }
+
+.paklijst__groep {
+  font-size: 13px;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--geel);
+  margin: 16px 0 4px;
+}
+
+.paklijst__item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 7px 0;
+  font-size: 14.5px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+  cursor: pointer;
+}
+
+.paklijst__item input {
+  width: 20px;
+  height: 20px;
+  accent-color: var(--roze);
+  flex: none;
+}
+
+.paklijst__item:has(input:checked) { color: var(--tekst-zacht); text-decoration: line-through; }
 
 /* ---------------- Tabbalk ---------------- */
 

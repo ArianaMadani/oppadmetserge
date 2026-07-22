@@ -799,7 +799,8 @@ function renderProgramma() {
 
 /* ---------------- Blokkenschema ---------------- */
 
-var SCHAAL = 1.8; // pixels per minuut (108 px per uur)
+var SCHAAL = 2.2;    // pixels per minuut op de horizontale tijd-as (132 px/uur)
+var LABEL_B = 112;   // breedte van de podium-kolom links
 
 // Rode "nu"-lijn: alleen op de festivaldag zelf (nacht tot 05:00 hoort bij
 // de vorige dag, net als in de rest van de app).
@@ -814,13 +815,15 @@ function nuMinuten() {
   return m;
 }
 
+// Blokkenschema in Wildeburg-stijl: podia als rijen, de tijd loopt
+// horizontaal — vegen door de dag als door een tv-gids.
 function renderBlokkenschema() {
   var alle = LINEUP[programmaDag].slice().sort(function (a, b) {
     return tijdSleutel(a.tijd) - tijdSleutel(b.tijd) || a.naam.localeCompare(b.naam, "nl");
   });
   var zoek = normItem($("#p-zoek").value);
 
-  // Podia geordend op drukte (meeste optredens eerst).
+  // Podia geordend op drukte (meeste optredens bovenaan).
   var telling = {};
   alle.forEach(function (a) { telling[a.podium] = (telling[a.podium] || 0) + 1; });
   var podia = Object.keys(telling).sort(function (a, b) {
@@ -836,27 +839,23 @@ function renderBlokkenschema() {
   });
   var start = Math.floor(minM / 60) * 60;
   var eind = Math.ceil((maxM + 60) / 60) * 60;
-  var hoogte = (eind - start) * SCHAAL;
+  var breedte = LABEL_B + (eind - start) * SCHAAL;
 
   var nu = nuMinuten();
   var nuLijn = (nu !== null && nu >= start && nu <= eind)
-    ? '<div class="schema__nu" style="top:' + Math.round((nu - start) * SCHAAL) + 'px"></div>'
+    ? '<div class="schema__nu" style="left:' + Math.round(LABEL_B + (nu - start) * SCHAAL) + 'px"></div>'
     : "";
 
-  // Linkerkolom met uurtijden. Het allereerste label niet half boven de
-  // rand laten uitsteken.
+  // Kopregel met uurtijden.
   var uren = "";
   for (var m = start; m <= eind; m += 60) {
-    var stijl = (m === start)
-      ? "top:2px;transform:none"
-      : "top:" + ((m - start) * SCHAAL) + "px";
-    uren += '<div class="schema__uur" style="' + stijl + '">' +
+    uren += '<div class="hkop__uur" style="left:' + (LABEL_B + (m - start) * SCHAAL) + 'px">' +
       ("0" + Math.floor((m % 1440) / 60)).slice(-2) + ":00</div>";
   }
 
-  // Eén kolom per podium. Meerdere dingen op dezelfde tijd op hetzelfde
-  // podium worden één gecombineerd blok, anders vallen ze over elkaar heen.
-  var kolommen = podia.map(function (p) {
+  // Eén rij per podium. Meerdere dingen op dezelfde tijd op hetzelfde
+  // podium worden één gecombineerd blok.
+  var rijen = podia.map(function (p) {
     var acts = alle.filter(function (a) { return a.podium === p; });
 
     var groepen = [];
@@ -875,28 +874,26 @@ function renderBlokkenschema() {
                   return normItem(a.naam).indexOf(zoek) >= 0 || normItem(a.podium).indexOf(zoek) >= 0;
                 })) || (alleenHartjes && !vol);
       var soloNaam = g.acts.length === 1 ? ' data-naam="' + esc(g.acts[0].naam) + '"' : "";
+      var tekst = g.acts.length === 1 ? esc(g.acts[0].naam)
+        : g.acts.length + "× — " + esc(g.acts.map(function (a) { return a.naam; }).join(" · "));
       return '<button type="button" class="blok' + (vol ? " blok--vol" : "") + (dim ? " blok--dim" : "") +
-        '" style="top:' + ((van - start) * SCHAAL) + "px;height:" + (duur * SCHAAL - 4) +
+        '" style="left:' + (LABEL_B + (van - start) * SCHAAL) + "px;width:" + (duur * SCHAAL - 4) +
         'px" data-tijd="' + esc(g.tijd) + '"' + soloNaam + ">" +
+        '<span class="blok__naam">' + tekst + "</span>" +
         '<span class="blok__tijd">' + esc(g.tijd) + (vol ? " ❤️" : "") + "</span>" +
-        g.acts.map(function (a) {
-          return '<span class="blok__naam">' + esc(a.naam) + "</span>";
-        }).join('<span class="blok__scheiding"></span>') +
       "</button>";
     }).join("");
 
-    return '<div class="schema__kolom">' +
-      '<div class="schema__podium">' + esc(p) + "</div>" +
-      '<div class="schema__vak" style="height:' + hoogte + 'px">' + nuLijn + blokken + "</div>" +
+    return '<div class="hrij">' +
+      '<div class="hrij__label">' + esc(p) + "</div>" + blokken +
     "</div>";
   }).join("");
 
   $("#programmalijst").innerHTML =
-    '<p class="schema__hint">Veeg opzij voor meer podia · tik op een blok voor een ❤️</p>' +
-    '<div class="schema"><div class="schema__binnen">' +
-      '<div class="schema__tijden"><div class="schema__hoek"></div>' +
-        '<div class="schema__uren" style="height:' + hoogte + 'px">' + nuLijn + uren + "</div></div>" +
-      kolommen +
+    '<p class="schema__hint">Veeg opzij door de dag · tik op een blok voor een ❤️</p>' +
+    '<div class="schema"><div class="schema__binnen" style="width:' + breedte + 'px">' +
+      '<div class="hkop"><div class="hkop__hoek"></div>' + uren + "</div>" +
+      rijen + nuLijn +
     "</div></div>";
 }
 
@@ -936,6 +933,24 @@ function initProgramma() {
   renderProgramma();
 }
 
+/* ---------------- Paklijst ---------------- */
+
+// De vinkjes van de paklijst blijven op je eigen telefoon bewaard.
+function initPaklijst() {
+  var opgeslagen = [];
+  try { opgeslagen = JSON.parse(localStorage.getItem("lj_paklijst") || "[]"); } catch (e) {}
+  document.querySelectorAll("#paklijst input[data-pak]").forEach(function (vak) {
+    vak.checked = opgeslagen.indexOf(vak.dataset.pak) >= 0;
+  });
+  $("#paklijst").addEventListener("change", function () {
+    var aangevinkt = [];
+    document.querySelectorAll("#paklijst input[data-pak]:checked").forEach(function (vak) {
+      aangevinkt.push(vak.dataset.pak);
+    });
+    try { localStorage.setItem("lj_paklijst", JSON.stringify(aangevinkt)); } catch (e) {}
+  });
+}
+
 /* ---------------- Alles ---------------- */
 
 function renderAlles() {
@@ -962,6 +977,7 @@ function init() {
   initHuisjes();
   initBoodschappen();
   initCheckinKnoppen();
+  initPaklijst();
   initProgramma();
   toonTab(location.hash.replace("#", ""));
 
